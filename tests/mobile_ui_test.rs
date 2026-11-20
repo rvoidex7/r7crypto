@@ -41,7 +41,13 @@ fn assert_within_viewport_width(node: &Node<'_>, path: &str, pixels_per_point: f
 
 #[test]
 fn mobile_360px_viewport_renders_all_tabs_without_overflow_or_id_clash() {
-    for tab in [Tab::Use, Tab::Test, Tab::Benchmark, Tab::Learn] {
+    for tab in [
+        Tab::Use,
+        Tab::Test,
+        Tab::Benchmark,
+        Tab::Learn,
+        Tab::Avalanche,
+    ] {
         let app = EntropyForgeApp::for_tab(tab);
         let mut harness = Harness::builder()
             .with_size(egui::vec2(VIEWPORT_WIDTH, 800.0))
@@ -77,6 +83,23 @@ fn mobile_360px_header_with_bias_slider_does_not_overflow() {
     let root = harness.root();
     let pixels_per_point = harness.ctx.pixels_per_point();
     assert_within_viewport_width(&root, "Biased", pixels_per_point);
+}
+
+#[test]
+fn mobile_360px_avalanche_grid_does_not_overflow() {
+    let mut harness = Harness::builder()
+        .with_size(egui::vec2(VIEWPORT_WIDTH, 800.0))
+        .allow_missing_glyphs()
+        .build_eframe(|_cc| EntropyForgeApp::for_tab(Tab::Avalanche));
+
+    harness.run_steps(2);
+    harness.get_by_label("🔀 Run Avalanche").click();
+    harness.run();
+    assert!(harness.state().avalanche_result().is_some());
+
+    let root = harness.root();
+    let pixels_per_point = harness.ctx.pixels_per_point();
+    assert_within_viewport_width(&root, "Avalanche", pixels_per_point);
 }
 
 #[test]

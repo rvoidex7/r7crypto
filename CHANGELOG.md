@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Avalanche tab**: visualize the SHA-256 strict avalanche criterion. Pick a
+  message and an input bit, then see which of the 256 output bits flipped in a
+  16×16 grid, alongside mean/min/max diffusion over up to 200 single-bit flips
+- `tests/avalanche_ui_test.rs`: headless tests for the tab button, message
+  field, input-bit slider and Run button
+- A 360px overflow test for the Avalanche grid, and the new tab in the general
+  narrow-screen tab sweep
+
 ## [0.3.0] - 2026-11-19
 
 ### Added

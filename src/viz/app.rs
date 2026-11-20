@@ -5,7 +5,7 @@ use std::sync::mpsc::{self, Receiver, TryRecvError};
 use eframe::egui;
 
 use crate::bench::{BenchmarkResult, PerformanceBench};
-use crate::crypto::KeyedStreamCipher;
+use crate::crypto::{AvalancheAnalyzer, AvalancheResult, AvalancheStats, KeyedStreamCipher};
 use crate::entropy::{EntropySource, SourceKind, ARENA_SEED};
 use crate::learn::entropy_visual::interpret_entropy;
 use crate::learn::{EncryptionProcess, EntropyProcess, NistProcess};
@@ -49,6 +49,7 @@ pub enum Tab {
     Test,
     Benchmark,
     Learn,
+    Avalanche,
 }
 
 /// Main application state.
@@ -98,6 +99,13 @@ pub struct EntropyForgeApp {
     learn_input: String,
     entropy_process: EntropyProcess,
     nist_process: NistProcess,
+
+    // Avalanche tab state. Unlike the RNG Arena tabs, this uses a fixed
+    // message and SHA-256, so changing the entropy source does not clear it.
+    avalanche_input: String,
+    avalanche_bit: usize,
+    avalanche_result: Option<AvalancheResult>,
+    avalanche_stats: Option<AvalancheStats>,
 }
 
 impl Default for EntropyForgeApp {
@@ -132,6 +140,10 @@ impl Default for EntropyForgeApp {
             learn_input: String::from("Hello"),
             entropy_process: EntropyProcess::new(),
             nist_process: NistProcess::new(),
+            avalanche_input: String::from("Entropy Forge Avalanche Benchmark"),
+            avalanche_bit: 0,
+            avalanche_result: None,
+            avalanche_stats: None,
         }
     }
 }
@@ -215,6 +227,47 @@ impl EntropyForgeApp {
     /// Result of the last completed benchmark.
     pub fn bench_result(&self) -> Option<&BenchmarkResult> {
         self.bench_result.as_ref()
+    }
+
+    /// Message hashed by the Avalanche tab.
+    pub fn avalanche_input(&self) -> &str {
+        &self.avalanche_input
+    }
+
+    /// Set the Avalanche tab message and discard results for the old one.
+    pub fn set_avalanche_input(&mut self, input: impl Into<String>) {
+        let input = input.into();
+        if input == self.avalanche_input {
+            return;
+        }
+        self.avalanche_input = input;
+        self.avalanche_result = None;
+        self.avalanche_stats = None;
+    }
+
+    /// Zero-based, MSB-first index of the input bit being flipped.
+    pub fn avalanche_bit(&self) -> usize {
+        self.avalanche_bit
+    }
+
+    /// Choose which input bit to flip and discard the previous result.
+    pub fn set_avalanche_bit(&mut self, bit: usize) {
+        if bit == self.avalanche_bit {
+            return;
+        }
+        self.avalanche_bit = bit;
+        self.avalanche_result = None;
+        self.avalanche_stats = None;
+    }
+
+    /// Result of the last single-bit Avalanche experiment.
+    pub fn avalanche_result(&self) -> Option<&AvalancheResult> {
+        self.avalanche_result.as_ref()
+    }
+
+    /// Aggregate statistics from the last Avalanche run.
+    pub fn avalanche_stats(&self) -> Option<&AvalancheStats> {
+        self.avalanche_stats.as_ref()
     }
 
     /// Rebuild the live source and drop results that describe the old one.
@@ -328,11 +381,12 @@ impl eframe::App for EntropyForgeApp {
             ui.add_space(5.0);
             ui.separator();
 
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.selectable_value(&mut self.current_tab, Tab::Use, "📝 Use");
                 ui.selectable_value(&mut self.current_tab, Tab::Test, "🔬 Test");
                 ui.selectable_value(&mut self.current_tab, Tab::Benchmark, "⚡ Benchmark");
                 ui.selectable_value(&mut self.current_tab, Tab::Learn, "🎓 Learn");
+                ui.selectable_value(&mut self.current_tab, Tab::Avalanche, "🔀 Avalanche");
             });
 
             ui.separator();
@@ -343,6 +397,7 @@ impl eframe::App for EntropyForgeApp {
                 Tab::Test => self.render_test_tab(ui),
                 Tab::Benchmark => self.render_benchmark_tab(ui),
                 Tab::Learn => self.render_learn_tab(ui),
+                Tab::Avalanche => self.render_avalanche_tab(ui),
             });
         });
     }
@@ -1001,6 +1056,113 @@ impl EntropyForgeApp {
         });
 
         self.bench_rx = Some(rx);
+    }
+
+    /// Render the "Avalanche" tab: SHA-256 single-bit diffusion.
+    fn render_avalanche_tab(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Avalanche Effect (SHA-256)");
+        ui.label(
+            "Flip one bit of the input. A good hash changes about half of its \
+             256 output bits — far fewer means the input is not being diffused.",
+        );
+        ui.add_space(SECTION_GAP);
+
+        let input_label = ui.label("Message:");
+        let response = ui
+            .add(
+                egui::TextEdit::singleline(&mut self.avalanche_input)
+                    .desired_width((ui.available_width() - 120.0).max(120.0))
+                    .hint_text("Type a message"),
+            )
+            .labelled_by(input_label.id);
+        if response.changed() {
+            self.avalanche_result = None;
+            self.avalanche_stats = None;
+        }
+        ui.add_space(FIELD_GAP);
+
+        let total_bits = self.avalanche_input.len() * 8;
+        if total_bits == 0 {
+            ui.label("Type a message to analyze its avalanche behaviour.");
+            return;
+        }
+
+        // A shorter message can leave the selected bit out of range.
+        if self.avalanche_bit >= total_bits {
+            self.avalanche_bit = total_bits - 1;
+            self.avalanche_result = None;
+            self.avalanche_stats = None;
+        }
+
+        ui.add(egui::Slider::new(&mut self.avalanche_bit, 0..=total_bits - 1).text("Input bit"));
+        ui.add_space(FIELD_GAP);
+
+        if ui.button("🔀 Run Avalanche").clicked() {
+            let bytes = self.avalanche_input.as_bytes();
+            self.avalanche_result =
+                AvalancheAnalyzer::compare_single_bit(bytes, self.avalanche_bit);
+            self.avalanche_stats = Some(AvalancheAnalyzer::analyze_sha256(bytes));
+        }
+
+        let Some(result) = self.avalanche_result.as_ref() else {
+            return;
+        };
+
+        ui.add_space(SECTION_GAP);
+        ui.label(format!(
+            "Bit {} flipped: {}/256 output bits changed ({:.1}%).",
+            result.flipped_bit, result.changed_bits, result.flip_percentage
+        ));
+        ui.label(format!("Original: {}", hex::encode(result.original)));
+        ui.label(format!("Modified: {}", hex::encode(result.modified)));
+
+        ui.add_space(FIELD_GAP);
+        Self::render_avalanche_grid(ui, result);
+
+        ui.add_space(FIELD_GAP);
+        if let Some(stats) = self.avalanche_stats.as_ref() {
+            ui.horizontal_wrapped(|ui| {
+                ui.label(format!("Samples: {}", stats.samples));
+                ui.label(format!("Mean: {:.1}%", stats.mean_flip_percentage));
+                ui.label(format!("Min: {:.1}%", stats.min_flip_percentage));
+                ui.label(format!("Max: {:.1}%", stats.max_flip_percentage));
+            });
+        }
+        ui.label("Ideal average: ~50%. Colored cells are the bits that flipped.");
+    }
+
+    /// Draw the 256 output bits as a 16x16 grid. Red cells changed, grey ones did not.
+    fn render_avalanche_grid(ui: &mut egui::Ui, result: &AvalancheResult) {
+        ui.label("Output bits (16 × 16):");
+
+        const COLUMNS: usize = 16;
+        const CELL: f32 = 12.0;
+
+        ui.vertical(|ui| {
+            ui.spacing_mut().item_spacing = egui::vec2(2.0, 2.0);
+            for row in 0..16 {
+                ui.horizontal(|ui| {
+                    for column in 0..COLUMNS {
+                        let index = row * COLUMNS + column;
+                        let (rect, response) =
+                            ui.allocate_exact_size(egui::vec2(CELL, CELL), egui::Sense::hover());
+                        let before = (result.original[index / 8] >> (7 - index % 8)) & 1;
+                        let after = (result.modified[index / 8] >> (7 - index % 8)) & 1;
+                        let flipped = before != after;
+                        let color = if flipped {
+                            egui::Color32::from_rgb(214, 83, 64)
+                        } else {
+                            egui::Color32::from_gray(72)
+                        };
+                        ui.painter().rect_filled(rect, 1.0, color);
+                        response.on_hover_text(format!(
+                            "Output bit {index}: {before} → {after}{}",
+                            if flipped { " (flipped)" } else { "" }
+                        ));
+                    }
+                });
+            }
+        });
     }
 
     /// Render the "Learn" tab.
