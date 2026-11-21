@@ -7,8 +7,8 @@
 
 use egui_kittest::kittest::{NodeT, Queryable};
 use egui_kittest::{Harness, Node};
-use entropy_forge::entropy::SourceKind;
-use entropy_forge::viz::{EntropyForgeApp, Tab};
+use r7crypto::entropy::SourceKind;
+use r7crypto::viz::{R7CryptoApp, Tab};
 
 const VIEWPORT_WIDTH: f32 = 360.0;
 
@@ -48,7 +48,7 @@ fn mobile_360px_viewport_renders_all_tabs_without_overflow_or_id_clash() {
         Tab::Learn,
         Tab::Avalanche,
     ] {
-        let app = EntropyForgeApp::for_tab(tab);
+        let app = R7CryptoApp::for_tab(tab);
         let mut harness = Harness::builder()
             .with_size(egui::vec2(VIEWPORT_WIDTH, 800.0))
             // Icon glyphs are drawn as tofu headlessly; the desktop build loads
@@ -69,7 +69,7 @@ fn mobile_360px_viewport_renders_all_tabs_without_overflow_or_id_clash() {
 
 #[test]
 fn mobile_360px_header_with_bias_slider_does_not_overflow() {
-    let mut app = EntropyForgeApp::for_tab(Tab::Test);
+    let mut app = R7CryptoApp::for_tab(Tab::Test);
     app.select_source(SourceKind::Biased);
 
     let mut harness = Harness::builder()
@@ -90,7 +90,7 @@ fn mobile_360px_avalanche_grid_does_not_overflow() {
     let mut harness = Harness::builder()
         .with_size(egui::vec2(VIEWPORT_WIDTH, 800.0))
         .allow_missing_glyphs()
-        .build_eframe(|_cc| EntropyForgeApp::for_tab(Tab::Avalanche));
+        .build_eframe(|_cc| R7CryptoApp::for_tab(Tab::Avalanche));
 
     harness.run_steps(2);
     harness.get_by_label("🔀 Run Avalanche").click();
@@ -107,7 +107,7 @@ fn use_tab_encrypt_then_decrypt_round_trip_through_widgets() {
     let mut harness = Harness::builder()
         .with_size(egui::vec2(VIEWPORT_WIDTH, 800.0))
         .allow_missing_glyphs()
-        .build_eframe(|_cc| EntropyForgeApp::for_tab(Tab::Use));
+        .build_eframe(|_cc| R7CryptoApp::for_tab(Tab::Use));
 
     harness.run_steps(2);
 

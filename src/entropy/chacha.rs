@@ -21,7 +21,7 @@ use super::EntropySource;
 /// # Examples
 ///
 /// ```
-/// use entropy_forge::entropy::{ChaCha20Source, EntropySource};
+/// use r7crypto::entropy::{ChaCha20Source, EntropySource};
 ///
 /// let mut source = ChaCha20Source::new(42);
 /// let mut buffer = [0u8; 32];

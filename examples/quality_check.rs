@@ -1,7 +1,7 @@
 //! Comprehensive quality check example
 
-use entropy_forge::entropy::{EntropySource, SystemEntropy};
-use entropy_forge::quality::{NistTests, QualityMetrics};
+use r7crypto::entropy::{EntropySource, SystemEntropy};
+use r7crypto::quality::{NistTests, QualityMetrics};
 
 fn main() {
     println!("=== Entropy Quality Check ===\n");

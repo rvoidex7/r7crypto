@@ -1,6 +1,6 @@
-# Contributing to Entropy Forge
+# Contributing to r7 Crypto Lab
 
-Thank you for your interest in contributing to Entropy Forge! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to r7 Crypto Lab! This document provides guidelines and instructions for contributing.
 
 ## Code of Conduct
 
@@ -10,7 +10,7 @@ Please be respectful and constructive in all interactions. We welcome contributo
 
 ### Reporting Bugs
 
-1. Check if the bug has already been reported in [Issues](https://github.com/rvoidex7/entropy-forge/issues)
+1. Check if the bug has already been reported in [Issues](https://github.com/rvoidex7/r7crypto/issues)
 2. If not, create a new issue using the Bug Report template
 3. Include as much detail as possible
 
@@ -49,8 +49,8 @@ Please be respectful and constructive in all interactions. We welcome contributo
 ### Building
 
 ```bash
-git clone https://github.com/rvoidex7/entropy-forge.git
-cd entropy-forge
+git clone https://github.com/rvoidex7/r7crypto.git
+cd r7crypto
 cargo build
 ```
 
@@ -100,7 +100,7 @@ refactor: simplify cipher state management
 ## Project Structure
 
 ```
-entropy-forge/
+r7crypto/
 ├── src/
 │   ├── entropy/     # Entropy source trait and implementations
 │   ├── crypto/      # Cryptographic operations

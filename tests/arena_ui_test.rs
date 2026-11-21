@@ -9,21 +9,21 @@
 use egui::Role;
 use egui_kittest::kittest::Queryable;
 use egui_kittest::Harness;
-use entropy_forge::entropy::SourceKind;
-use entropy_forge::viz::{EntropyForgeApp, Tab};
+use r7crypto::entropy::SourceKind;
+use r7crypto::viz::{R7CryptoApp, Tab};
 
 /// Build a harness large enough that the result panels do not need scrolling
 /// to be laid out.
-fn arena_harness(tab: Tab) -> Harness<'static, EntropyForgeApp> {
+fn arena_harness(tab: Tab) -> Harness<'static, R7CryptoApp> {
     Harness::builder()
         .with_size(egui::vec2(800.0, 1200.0))
         .allow_missing_glyphs()
         .with_max_steps(20_000)
-        .build_eframe(move |_cc| EntropyForgeApp::for_tab(tab))
+        .build_eframe(move |_cc| R7CryptoApp::for_tab(tab))
 }
 
 /// Open the source combo box and pick `label`.
-fn choose_source(harness: &mut Harness<'_, EntropyForgeApp>, label: &str) {
+fn choose_source(harness: &mut Harness<'_, R7CryptoApp>, label: &str) {
     harness.get_by_role(Role::ComboBox).click();
     harness.run();
     harness.get_by_label(label).click();
@@ -87,7 +87,7 @@ fn counter_source_test_run_shows_a_capped_score() {
         .allow_missing_glyphs()
         .with_max_steps(20_000)
         .build_eframe(|_cc| {
-            let mut app = EntropyForgeApp::for_tab(Tab::Test);
+            let mut app = R7CryptoApp::for_tab(Tab::Test);
             app.select_source(SourceKind::Counter);
             app.set_sample_size(50_000);
             app
@@ -129,7 +129,7 @@ fn benchmark_button_runs_with_the_selected_source() {
         .allow_missing_glyphs()
         .with_max_steps(20_000)
         .build_eframe(|_cc| {
-            let mut app = EntropyForgeApp::for_tab(Tab::Benchmark);
+            let mut app = R7CryptoApp::for_tab(Tab::Benchmark);
             app.select_source(SourceKind::Counter);
             app
         });
@@ -158,7 +158,7 @@ fn changing_the_source_discards_the_previous_run() {
         .allow_missing_glyphs()
         .with_max_steps(20_000)
         .build_eframe(|_cc| {
-            let mut app = EntropyForgeApp::for_tab(Tab::Test);
+            let mut app = R7CryptoApp::for_tab(Tab::Test);
             app.select_source(SourceKind::Counter);
             app.set_sample_size(50_000);
             app

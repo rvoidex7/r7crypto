@@ -4,9 +4,9 @@
 //! 2.4.8 and 2.13.8). These values are fixed by the specification and must not
 //! be relaxed.
 
-use entropy_forge::crypto::{AvalancheAnalyzer, KeyedStreamCipher};
-use entropy_forge::learn::EncryptionProcess;
-use entropy_forge::quality::{NistTests, QualityReport};
+use r7crypto::crypto::{AvalancheAnalyzer, KeyedStreamCipher};
+use r7crypto::learn::EncryptionProcess;
+use r7crypto::quality::{NistTests, QualityReport};
 
 /// Convert a `"110010..."` string to an MSB-first byte vector.
 fn bitstring_to_bytes_msb(bits: &str) -> (Vec<u8>, usize) {
@@ -147,7 +147,7 @@ fn learn_xor_utf8_preserves_multibyte_characters() {
 #[test]
 fn sha256_strict_avalanche_criterion_is_near_50_percent() {
     // Mean over 200 single-bit flips follows Binomial(256, 0.5).
-    let stats = AvalancheAnalyzer::analyze_sha256(b"Entropy Forge Avalanche Benchmark");
+    let stats = AvalancheAnalyzer::analyze_sha256(b"r7 Crypto Lab Avalanche Benchmark");
     assert!(
         (stats.mean_flip_percentage - 50.0).abs() < 3.0,
         "SHA-256 mean avalanche should be ~50%, got {:.2}%",

@@ -1,14 +1,17 @@
 <p align="center">
-  <img src="assets/icons/128x128.png" width="96" alt="Entropy Forge icon">
+  <img src="assets/icons/128x128.png" width="96" alt="r7 Crypto Lab icon">
 </p>
 
-<h1 align="center">Entropy Forge</h1>
+<h1 align="center">r7 Crypto Lab</h1>
 
-Pluggable entropy framework for cryptographic applications with built-in quality testing, visualization, and **interactive educational tools**.
+<p align="center"><em>Learn · Try · Verify · Make it visible</em></p>
+
+An interactive cryptography workbench built on a pluggable entropy framework,
+with quality testing, visualization and **interactive educational tools**.
 
 ![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)
-![CI](https://github.com/rvoidex7/entropy-forge/workflows/CI/badge.svg)
+![CI](https://github.com/rvoidex7/r7crypto/workflows/CI/badge.svg)
 
 ## Features
 
@@ -36,8 +39,8 @@ cargo run --release
 ### Prebuilt binaries
 
 Every release has Linux and Windows builds on the
-[releases page](https://github.com/rvoidex7/entropy-forge/releases).
-On Windows, unzip the archive and run `entropy-forge.exe`; release builds do not
+[releases page](https://github.com/rvoidex7/r7crypto/releases).
+On Windows, unzip the archive and run `r7crypto.exe`; release builds do not
 open a console window. macOS builds are not published yet.
 
 The Linux archive contains the binary, a `.desktop` entry and a 256x256 icon.
@@ -45,13 +48,13 @@ Installing all three makes the app appear in the menu with its icon, including o
 Wayland panels, which look the icon up through the `.desktop` file:
 
 ```bash
-tar -xzf entropy-forge-<version>-linux-x86_64.tar.gz
-cd entropy-forge-<version>-linux-x86_64
-install -Dm755 entropy-forge ~/.local/bin/entropy-forge
-install -Dm644 entropy-forge.desktop \
-  ~/.local/share/applications/entropy-forge.desktop
-install -Dm644 icons/hicolor/256x256/apps/entropy-forge.png \
-  ~/.local/share/icons/hicolor/256x256/apps/entropy-forge.png
+tar -xzf r7crypto-<version>-linux-x86_64.tar.gz
+cd r7crypto-<version>-linux-x86_64
+install -Dm755 r7crypto ~/.local/bin/r7crypto
+install -Dm644 r7crypto.desktop \
+  ~/.local/share/applications/r7crypto.desktop
+install -Dm644 icons/hicolor/256x256/apps/r7crypto.png \
+  ~/.local/share/icons/hicolor/256x256/apps/r7crypto.png
 ```
 
 `~/.local/bin` must be in `PATH` for the menu entry to launch the app.
@@ -107,8 +110,8 @@ Perfect for understanding how stream ciphers actually work!
 ### Using the Default Source
 
 ```rust
-use entropy_forge::entropy::SystemEntropy;
-use entropy_forge::crypto::KeyedStreamCipher;
+use r7crypto::entropy::SystemEntropy;
+use r7crypto::crypto::KeyedStreamCipher;
 
 let key = KeyedStreamCipher::derive_key("correct horse battery staple");
 let nonce = [0x24u8; 12];
@@ -126,7 +129,7 @@ entropy source and is **not** a substitute for ChaCha20.
 ### Implementing a Custom Source
 
 ```rust
-use entropy_forge::entropy::EntropySource;
+use r7crypto::entropy::EntropySource;
 
 struct MyRNG {
     state: u64,
@@ -150,8 +153,8 @@ impl EntropySource for MyRNG {
 ### Testing Entropy Quality
 
 ```rust
-use entropy_forge::quality::QualityMetrics;
-use entropy_forge::entropy::SystemEntropy;
+use r7crypto::quality::QualityMetrics;
+use r7crypto::entropy::SystemEntropy;
 
 let mut source = SystemEntropy::new();
 let metrics = QualityMetrics::analyze(&mut source, 100_000);
@@ -164,8 +167,8 @@ println!("Quality Score: {:.1}/100", metrics.overall_score());
 ### Running NIST Tests
 
 ```rust
-use entropy_forge::quality::NistTests;
-use entropy_forge::entropy::{EntropySource, SystemEntropy};
+use r7crypto::quality::NistTests;
+use r7crypto::entropy::{EntropySource, SystemEntropy};
 
 let mut source = SystemEntropy::new();
 let mut data = vec![0u8; 100_000];
@@ -183,7 +186,7 @@ for (name, p_value) in results {
 
 ## Design Philosophy
 
-Entropy Forge is designed to work with **any** entropy source through a clean trait interface. Whether you're using:
+r7 Crypto Lab is designed to work with **any** entropy source through a clean trait interface. Whether you're using:
 
 - System RNG (`/dev/urandom`, `BCryptGenRandom`, etc.)
 - Hardware RNG (TPM, RDRAND, etc.)
@@ -204,7 +207,7 @@ The framework provides:
 ## Architecture
 
 ```
-entropy-forge/
+r7crypto/
 ├── src/
 │   ├── entropy/      # EntropySource trait + implementations
 │   ├── crypto/       # Stream cipher, key derivation
@@ -260,7 +263,7 @@ impl EntropySource for ChaoticRNG {
     }
 }
 
-// Use with Entropy Forge
+// Use with r7 Crypto Lab
 let mut source = ChaoticRNG::new();
 let metrics = QualityMetrics::analyze(&mut source, 1_000_000);
 // Expect: ~7.75 bits/byte, excellent NIST scores

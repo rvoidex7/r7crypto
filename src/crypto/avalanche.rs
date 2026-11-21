@@ -142,7 +142,7 @@ mod tests {
 
     #[test]
     fn sha256_avalanche_mean_is_near_fifty_percent() {
-        let stats = AvalancheAnalyzer::analyze_sha256(b"Entropy Forge Avalanche Benchmark");
+        let stats = AvalancheAnalyzer::analyze_sha256(b"r7 Crypto Lab Avalanche Benchmark");
         assert_eq!(stats.samples, 200);
         assert!(
             (stats.mean_flip_percentage - 50.0).abs() < 3.0,
@@ -155,10 +155,10 @@ mod tests {
 
     #[test]
     fn single_bit_flip_changes_roughly_half_the_digest() {
-        let result = AvalancheAnalyzer::compare_single_bit(b"Entropy Forge", 0).unwrap();
+        let result = AvalancheAnalyzer::compare_single_bit(b"r7 Crypto Lab", 0).unwrap();
         assert_eq!(result.total_bits, 256);
         assert!(result.changed_bits > 80 && result.changed_bits < 176);
-        assert_eq!(result.original, AvalancheAnalyzer::sha256(b"Entropy Forge"));
+        assert_eq!(result.original, AvalancheAnalyzer::sha256(b"r7 Crypto Lab"));
         assert_ne!(result.original, result.modified);
     }
 

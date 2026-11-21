@@ -1,16 +1,16 @@
 [package]
-name = "entropy-forge"
-version = "0.3.0"
+name = "r7crypto"
+version = "0.4.0"
 edition = "2021"
 authors = ["rvoidex7"]
 license = "MIT"
-description = "Pluggable entropy framework with quality testing and visualization"
-repository = "https://github.com/rvoidex7/entropy-forge"
+description = "Interactive cryptography workbench with pluggable entropy sources, quality testing and visualization"
+repository = "https://github.com/rvoidex7/r7crypto"
 keywords = ["cryptography", "entropy", "rng", "visualization", "nist"]
 categories = ["cryptography", "visualization"]
 
 [lib]
-name = "entropy_forge"
+name = "r7crypto"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
@@ -61,7 +61,7 @@ gui = ["dep:egui", "dep:eframe", "dep:image"]
 unused_dependencies = "deny"
 
 [[bin]]
-name = "entropy-forge"
+name = "r7crypto"
 path = "src/main.rs"
 required-features = ["gui"]
 

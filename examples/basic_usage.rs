@@ -1,11 +1,11 @@
 //! Basic usage example
 
-use entropy_forge::crypto::StreamCipher;
-use entropy_forge::entropy::{EntropySource, SystemEntropy};
-use entropy_forge::quality::QualityMetrics;
+use r7crypto::crypto::StreamCipher;
+use r7crypto::entropy::{EntropySource, SystemEntropy};
+use r7crypto::quality::QualityMetrics;
 
 fn main() {
-    println!("=== Entropy Forge - Basic Usage ===\n");
+    println!("=== r7 Crypto Lab - Basic Usage ===\n");
 
     // Create entropy source
     let mut entropy = SystemEntropy::new();
@@ -20,7 +20,7 @@ fn main() {
     // Use with stream cipher
     println!("\n--- Stream Cipher Example ---");
     let mut cipher = StreamCipher::new(SystemEntropy::new());
-    let plaintext = b"Hello, Entropy Forge!";
+    let plaintext = b"Hello, r7 Crypto Lab!";
     let ciphertext = cipher.process(plaintext);
     println!("Plaintext:  {}", String::from_utf8_lossy(plaintext));
     println!("Ciphertext: {}", hex::encode(&ciphertext));

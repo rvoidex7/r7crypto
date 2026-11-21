@@ -9,17 +9,17 @@
 use egui::Role;
 use egui_kittest::kittest::Queryable;
 use egui_kittest::Harness;
-use entropy_forge::crypto::AvalancheAnalyzer;
-use entropy_forge::viz::{EntropyForgeApp, Tab};
+use r7crypto::crypto::AvalancheAnalyzer;
+use r7crypto::viz::{R7CryptoApp, Tab};
 
-const DEFAULT_MESSAGE: &str = "Entropy Forge Avalanche Benchmark";
+const DEFAULT_MESSAGE: &str = "r7 Crypto Lab Avalanche Benchmark";
 
-fn avalanche_harness() -> Harness<'static, EntropyForgeApp> {
+fn avalanche_harness() -> Harness<'static, R7CryptoApp> {
     Harness::builder()
         .with_size(egui::vec2(800.0, 1200.0))
         .allow_missing_glyphs()
         .with_max_steps(20_000)
-        .build_eframe(|_cc| EntropyForgeApp::for_tab(Tab::Avalanche))
+        .build_eframe(|_cc| R7CryptoApp::for_tab(Tab::Avalanche))
 }
 
 #[test]
@@ -27,7 +27,7 @@ fn avalanche_tab_is_reachable_from_the_tab_bar() {
     let mut harness = Harness::builder()
         .with_size(egui::vec2(800.0, 1200.0))
         .allow_missing_glyphs()
-        .build_eframe(|_cc| EntropyForgeApp::for_tab(Tab::Use));
+        .build_eframe(|_cc| R7CryptoApp::for_tab(Tab::Use));
 
     harness.run_steps(2);
     assert_eq!(harness.state().current_tab(), Tab::Use);

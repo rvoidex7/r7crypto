@@ -3,7 +3,7 @@
 mod app;
 pub mod icon;
 
-pub use app::{EntropyForgeApp, Tab};
+pub use app::{R7CryptoApp, Tab};
 
 /// Vertical gap between related form fields.
 ///

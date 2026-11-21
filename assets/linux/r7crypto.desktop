@@ -1,11 +1,11 @@
 [Desktop Entry]
 Type=Application
-Name=Entropy Forge
-GenericName=Entropy Lab
+Name=r7 Crypto Lab
+GenericName=Cryptography Lab
 Comment=Explore, test and visualize cryptographic entropy sources
-Exec=entropy-forge
-Icon=entropy-forge
+Exec=r7crypto
+Icon=r7crypto
 Terminal=false
 Categories=Education;Math;
 Keywords=entropy;cryptography;rng;nist;random;
-StartupWMClass=entropy-forge
+StartupWMClass=r7crypto

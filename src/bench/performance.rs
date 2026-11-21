@@ -35,8 +35,8 @@ impl PerformanceBench {
     /// # Examples
     ///
     /// ```
-    /// use entropy_forge::entropy::SystemEntropy;
-    /// use entropy_forge::bench::PerformanceBench;
+    /// use r7crypto::entropy::SystemEntropy;
+    /// use r7crypto::bench::PerformanceBench;
     ///
     /// let mut source = SystemEntropy::new();
     /// let result = PerformanceBench::benchmark(&mut source, 1_000_000);

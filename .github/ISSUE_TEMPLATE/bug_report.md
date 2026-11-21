@@ -26,7 +26,7 @@ If applicable, add screenshots to help explain your problem.
 ## Environment
 - OS: [e.g., Windows 11, Ubuntu 24.04]
 - Rust version: [e.g., 1.85.0]
-- App version: [e.g., v0.3.0]
+- App version: [e.g., v0.4.0]
 
 ## Additional Context
 Add any other context about the problem here.

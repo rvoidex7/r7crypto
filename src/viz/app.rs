@@ -53,7 +53,7 @@ pub enum Tab {
 }
 
 /// Main application state.
-pub struct EntropyForgeApp {
+pub struct R7CryptoApp {
     // Entropy source selection (the RNG Arena).
     source_kind: SourceKind,
     bias_probability: f64,
@@ -108,7 +108,7 @@ pub struct EntropyForgeApp {
     avalanche_stats: Option<AvalancheStats>,
 }
 
-impl Default for EntropyForgeApp {
+impl Default for R7CryptoApp {
     fn default() -> Self {
         Self {
             source_kind: SourceKind::default(),
@@ -116,7 +116,7 @@ impl Default for EntropyForgeApp {
             entropy: SourceKind::default().build(ARENA_SEED, DEFAULT_BIAS),
             current_tab: Tab::Use,
             icon: None,
-            passphrase: String::from("entropy-forge-demo"),
+            passphrase: String::from("r7crypto-demo"),
             nonce_hex: hex::encode(KeyedStreamCipher::random_nonce()),
             cipher_mode: CipherMode::Encrypt,
             cipher_input: String::from("Hello, World!"),
@@ -140,7 +140,7 @@ impl Default for EntropyForgeApp {
             learn_input: String::from("Hello"),
             entropy_process: EntropyProcess::new(),
             nist_process: NistProcess::new(),
-            avalanche_input: String::from("Entropy Forge Avalanche Benchmark"),
+            avalanche_input: String::from("r7 Crypto Lab Avalanche Benchmark"),
             avalanche_bit: 0,
             avalanche_result: None,
             avalanche_stats: None,
@@ -148,7 +148,7 @@ impl Default for EntropyForgeApp {
     }
 }
 
-impl EntropyForgeApp {
+impl R7CryptoApp {
     /// Create the app with a specific tab selected.
     pub fn for_tab(tab: Tab) -> Self {
         Self {
@@ -315,7 +315,7 @@ impl EntropyForgeApp {
     fn render_brand(&mut self, ui: &mut egui::Ui) {
         let icon = self.icon.get_or_insert_with(|| {
             ui.ctx().load_texture(
-                "entropy-forge-icon",
+                "r7crypto-icon",
                 super::icon::color_image(),
                 egui::TextureOptions::LINEAR,
             )
@@ -324,7 +324,7 @@ impl EntropyForgeApp {
             icon.id(),
             egui::vec2(HEADER_ICON_SIZE, HEADER_ICON_SIZE),
         )));
-        ui.heading("Entropy Forge");
+        ui.heading("r7 Crypto Lab");
     }
 
     /// The RNG selector. Its label names the whole class of options, and the
@@ -370,7 +370,7 @@ impl EntropyForgeApp {
     }
 }
 
-impl eframe::App for EntropyForgeApp {
+impl eframe::App for R7CryptoApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         // Poll background jobs before rendering so results appear promptly.
         self.poll_test_job();
@@ -403,7 +403,7 @@ impl eframe::App for EntropyForgeApp {
     }
 }
 
-impl EntropyForgeApp {
+impl R7CryptoApp {
     /// Helper to render consistent educational tooltips.
     fn render_explanation_tooltip(ui: &mut egui::Ui, label: &str, text: &str) {
         ui.horizontal(|ui| {
@@ -1833,7 +1833,7 @@ mod tests {
         let decrypted = KeyedStreamCipher::process_with_passphrase("pw", &nonce, &ciphertext);
 
         let (display, notice) =
-            EntropyForgeApp::format_cipher_output(CipherMode::Decrypt, true, &decrypted);
+            R7CryptoApp::format_cipher_output(CipherMode::Decrypt, true, &decrypted);
 
         assert_eq!(display, plaintext);
         assert!(notice.is_none());
@@ -1843,7 +1843,7 @@ mod tests {
     fn encrypt_with_hex_toggle_shows_hex_ciphertext() {
         let ciphertext = [0xDE, 0xAD, 0xBE, 0xEF];
         let (display, notice) =
-            EntropyForgeApp::format_cipher_output(CipherMode::Encrypt, true, &ciphertext);
+            R7CryptoApp::format_cipher_output(CipherMode::Encrypt, true, &ciphertext);
 
         assert_eq!(display, hex::encode(ciphertext));
         assert!(notice.is_none());
@@ -1857,11 +1857,11 @@ mod tests {
             KeyedStreamCipher::process_with_passphrase("pw", &nonce, plaintext.as_bytes());
 
         let (hex_display, _) =
-            EntropyForgeApp::format_cipher_output(CipherMode::Encrypt, true, &ciphertext);
+            R7CryptoApp::format_cipher_output(CipherMode::Encrypt, true, &ciphertext);
         let decoded = hex::decode(hex_display).unwrap();
         let decrypted = KeyedStreamCipher::process_with_passphrase("pw", &nonce, &decoded);
         let (plain_display, _) =
-            EntropyForgeApp::format_cipher_output(CipherMode::Decrypt, true, &decrypted);
+            R7CryptoApp::format_cipher_output(CipherMode::Decrypt, true, &decrypted);
 
         assert_eq!(plain_display, plaintext);
     }
@@ -1869,7 +1869,7 @@ mod tests {
     #[test]
     fn invalid_utf8_output_produces_a_warning() {
         let (display, notice) =
-            EntropyForgeApp::format_cipher_output(CipherMode::Decrypt, true, &[0xFF, 0xFE]);
+            R7CryptoApp::format_cipher_output(CipherMode::Decrypt, true, &[0xFF, 0xFE]);
 
         assert_eq!(display, "\u{FFFD}\u{FFFD}");
         assert!(
@@ -1881,19 +1881,19 @@ mod tests {
     #[test]
     fn binary_ciphertext_without_hex_warns_about_lossy_text() {
         let (_, notice) =
-            EntropyForgeApp::format_cipher_output(CipherMode::Encrypt, false, &[0xFF, 0xFE]);
+            R7CryptoApp::format_cipher_output(CipherMode::Encrypt, false, &[0xFF, 0xFE]);
 
         assert!(notice.unwrap().contains("Ciphertext is binary"));
     }
 
     #[test]
     fn ui_round_trip_encrypt_then_decrypt_restores_plaintext() {
-        let mut app = EntropyForgeApp {
+        let mut app = R7CryptoApp {
             passphrase: "test-passphrase".to_string(),
             nonce_hex: "000102030405060708090a0b".to_string(),
             cipher_input: "Hello, World!".to_string(),
             cipher_hex: true,
-            ..EntropyForgeApp::default()
+            ..R7CryptoApp::default()
         };
 
         app.run_cipher(CipherMode::Encrypt);
@@ -1914,11 +1914,11 @@ mod tests {
 
     #[test]
     fn decrypt_rejects_invalid_hex_instead_of_falling_back() {
-        let mut app = EntropyForgeApp {
+        let mut app = R7CryptoApp {
             nonce_hex: "000102030405060708090a0b".to_string(),
             cipher_hex: true,
             cipher_input: "not hex".to_string(),
-            ..EntropyForgeApp::default()
+            ..R7CryptoApp::default()
         };
 
         app.run_cipher(CipherMode::Decrypt);
@@ -1929,12 +1929,12 @@ mod tests {
 
     #[test]
     fn toggling_hex_reformats_existing_output() {
-        let mut app = EntropyForgeApp {
+        let mut app = R7CryptoApp {
             passphrase: "pw".to_string(),
             nonce_hex: "000102030405060708090a0b".to_string(),
             cipher_input: "abc".to_string(),
             cipher_hex: true,
-            ..EntropyForgeApp::default()
+            ..R7CryptoApp::default()
         };
 
         app.run_cipher(CipherMode::Encrypt);
@@ -1951,10 +1951,10 @@ mod tests {
 
     #[test]
     fn selecting_a_source_rebuilds_it_and_drops_stale_results() {
-        let mut app = EntropyForgeApp {
+        let mut app = R7CryptoApp {
             quality_metrics: Some(QualityMetrics::analyze_slice(&[0u8; 512])),
             nist_results: vec![("Frequency".to_string(), 0.5)],
-            ..EntropyForgeApp::default()
+            ..R7CryptoApp::default()
         };
 
         app.select_source(SourceKind::Counter);
@@ -1967,9 +1967,9 @@ mod tests {
 
     #[test]
     fn selecting_the_same_source_keeps_results() {
-        let mut app = EntropyForgeApp {
+        let mut app = R7CryptoApp {
             quality_metrics: Some(QualityMetrics::analyze_slice(&[0u8; 512])),
-            ..EntropyForgeApp::default()
+            ..R7CryptoApp::default()
         };
 
         app.select_source(app.source_kind());
@@ -1979,7 +1979,7 @@ mod tests {
 
     #[test]
     fn bias_probability_is_clamped_and_rebuilds_the_source() {
-        let mut app = EntropyForgeApp::default();
+        let mut app = R7CryptoApp::default();
         app.select_source(SourceKind::Biased);
 
         app.set_bias_probability(5.0);
@@ -1992,7 +1992,7 @@ mod tests {
 
     #[test]
     fn sample_size_cannot_be_zero() {
-        let mut app = EntropyForgeApp::default();
+        let mut app = R7CryptoApp::default();
         app.set_sample_size(0);
         assert_eq!(app.sample_size(), 1);
     }

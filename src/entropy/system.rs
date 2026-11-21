@@ -17,7 +17,7 @@ use getrandom::getrandom;
 /// # Examples
 ///
 /// ```
-/// use entropy_forge::entropy::{EntropySource, SystemEntropy};
+/// use r7crypto::entropy::{EntropySource, SystemEntropy};
 ///
 /// let mut entropy = SystemEntropy::new();
 /// let mut buffer = [0u8; 32];

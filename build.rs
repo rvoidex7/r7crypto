@@ -13,8 +13,8 @@ fn main() {
     {
         let mut resource = winresource::WindowsResource::new();
         resource.set_icon("assets/icons/icon.ico");
-        resource.set("ProductName", "Entropy Forge");
-        resource.set("FileDescription", "Entropy Forge");
+        resource.set("ProductName", "r7 Crypto Lab");
+        resource.set("FileDescription", "r7 Crypto Lab");
         resource
             .compile()
             .expect("failed to embed the Windows executable icon");

@@ -24,8 +24,8 @@ use sha2::{Digest, Sha256};
 /// # Examples
 ///
 /// ```
-/// use entropy_forge::entropy::MockEntropy;
-/// use entropy_forge::crypto::StreamCipher;
+/// use r7crypto::entropy::MockEntropy;
+/// use r7crypto::crypto::StreamCipher;
 ///
 /// let mut cipher = StreamCipher::new(MockEntropy::new(42));
 /// let ciphertext = cipher.process(b"Hello, World!");
@@ -90,7 +90,7 @@ impl<E: EntropySource> StreamCipher<E> {
 /// # Examples
 ///
 /// ```
-/// use entropy_forge::crypto::KeyedStreamCipher;
+/// use r7crypto::crypto::KeyedStreamCipher;
 ///
 /// let key = [0x42u8; 32];
 /// let nonce = [0x24u8; 12];

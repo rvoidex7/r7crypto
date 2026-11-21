@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-21
+
+### Changed
+- **Renamed the project to `r7crypto`** (display name **r7 Crypto Lab**). The
+  package, library, binary, app id, `.desktop` entry, icon asset names, docs
+  links and release artifacts now use the new name. Previous release notes keep
+  the original `entropy-forge` name as history.
+
 ### Added
 - **Avalanche tab**: visualize the SHA-256 strict avalanche criterion. Pick a
   message and an input bit, then see which of the 256 output bits flipped in a
@@ -113,7 +121,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/rvoidex7/entropy-forge/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/rvoidex7/entropy-forge/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/rvoidex7/entropy-forge/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/rvoidex7/entropy-forge/releases/tag/v0.1.0
+[Unreleased]: https://github.com/rvoidex7/r7crypto/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/rvoidex7/r7crypto/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/rvoidex7/r7crypto/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/rvoidex7/r7crypto/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/rvoidex7/r7crypto/releases/tag/v0.1.0

@@ -1,11 +1,11 @@
-//! # Entropy Forge
+//! # r7 Crypto Lab
 //!
 //! A pluggable entropy framework for cryptographic applications with built-in
 //! quality testing and visualization.
 //!
 //! ## Overview
 //!
-//! Entropy Forge provides a clean trait-based interface for working with any
+//! r7 Crypto Lab provides a clean trait-based interface for working with any
 //! entropy source (RNG). The framework offers three main capabilities:
 //!
 //! 1. **Use**: Cryptographic operations (stream cipher, key derivation)
@@ -15,8 +15,8 @@
 //! ## Quick Start
 //!
 //! ```rust
-//! use entropy_forge::entropy::{EntropySource, SystemEntropy};
-//! use entropy_forge::crypto::StreamCipher;
+//! use r7crypto::entropy::{EntropySource, SystemEntropy};
+//! use r7crypto::crypto::StreamCipher;
 //!
 //! let entropy = SystemEntropy::new();
 //! let mut cipher = StreamCipher::new(entropy);
@@ -30,7 +30,7 @@
 //! Implement the `EntropySource` trait to plug in your own RNG:
 //!
 //! ```rust
-//! use entropy_forge::entropy::EntropySource;
+//! use r7crypto::entropy::EntropySource;
 //!
 //! struct MyRNG {
 //!     // Your state

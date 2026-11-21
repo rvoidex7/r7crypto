@@ -1,7 +1,7 @@
 //! Entropy source trait and implementations
 //!
 //! This module defines the core `EntropySource` trait that allows any RNG
-//! to be used throughout the Entropy Forge framework.
+//! to be used throughout the r7 Crypto Lab framework.
 
 mod biased;
 mod chacha;
@@ -24,13 +24,13 @@ pub use system::SystemEntropy;
 /// Core trait for entropy sources
 ///
 /// Any random number generator can implement this trait to be used with
-/// Entropy Forge. The framework will use your RNG for cryptographic
+/// r7 Crypto Lab. The framework will use your RNG for cryptographic
 /// operations, quality testing, and benchmarking.
 ///
 /// # Examples
 ///
 /// ```
-/// use entropy_forge::entropy::EntropySource;
+/// use r7crypto::entropy::EntropySource;
 ///
 /// struct MyRNG {
 ///     state: u64,

@@ -1,8 +1,8 @@
 //! Example of implementing a custom entropy source
 
-use entropy_forge::crypto::StreamCipher;
-use entropy_forge::entropy::EntropySource;
-use entropy_forge::quality::QualityMetrics;
+use r7crypto::crypto::StreamCipher;
+use r7crypto::entropy::EntropySource;
+use r7crypto::quality::QualityMetrics;
 
 /// Simple custom RNG (DO NOT USE IN PRODUCTION!)
 /// This is just an example of implementing the EntropySource trait.

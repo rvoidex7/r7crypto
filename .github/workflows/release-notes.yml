@@ -11,7 +11,7 @@ name: Release notes
 #     commit still contains an older release workflow)
 #
 # The tag must already exist on GitHub: push it with your own credentials
-# (git push origin v0.3.0). GITHUB_TOKEN cannot create it, because GitHub
+# (git push origin v0.4.0). GITHUB_TOKEN cannot create it, because GitHub
 # requires the "workflow" scope to point a ref at a commit that modifies a
 # workflow file, and that scope is not available to GITHUB_TOKEN.
 #

@@ -19,7 +19,7 @@ If you discover a security vulnerability, please report it by:
 
 ### Educational Tool Disclaimer
 
-Entropy Forge is primarily an **educational tool** for understanding cryptographic concepts. 
+r7 Crypto Lab is primarily an **educational tool** for understanding cryptographic concepts.
 
 **DO NOT use this software for:**
 - Production cryptographic applications
