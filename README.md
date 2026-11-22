@@ -28,17 +28,18 @@ with quality testing, visualization and **interactive educational tools**.
 ## Screenshots
 
 Screenshots are being refreshed for the current tab set. Until then, try the
-[browser demo](https://rvoidex7.github.io/r7crypto/) or run the native GUI
-locally — both render the same egui interface.
+[web app](https://rvoidex7.github.io/r7crypto/) or run the native GUI locally —
+both render the same egui interface and expose the same workbench, not a reduced
+demo.
 
 ## Quick Start
 
 ### Try it in the browser
 
-The demo is deployed from `main` with GitHub Pages at
-<https://rvoidex7.github.io/r7crypto/>. No installation is needed. In the
-browser, the **System** source uses the Web Crypto API
-(`crypto.getRandomValues()`) through `getrandom/js`.
+The web app is deployed from `main` with GitHub Pages at
+<https://rvoidex7.github.io/r7crypto/>, but only after the full CI gate passes.
+No installation is needed. In the browser, the **System** source uses the Web
+Crypto API (`crypto.getRandomValues()`) through `getrandom/js`.
 
 To build it locally:
 

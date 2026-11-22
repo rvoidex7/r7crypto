@@ -89,3 +89,48 @@ jobs:
 
       - name: Type-check all targets
         run: cargo check --all-targets --all-features --locked
+
+  deploy:
+    name: Deploy web app
+    # Publish only after every check passes on a push to main. Pull requests
+    # still run all checks, but never deploy.
+    needs: [test, lint, wasm, windows]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo and target
+        uses: Swatinem/rust-cache@v2
+
+      # Prebuilt binary; `cargo install trunk --locked` wastes minutes here.
+      - name: Install Trunk
+        uses: taiki-e/install-action@trunk
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Build web app
+        run: trunk build --release
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5

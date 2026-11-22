@@ -11,9 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Browser/WASM build**: `src/web.rs`, `index.html` and `Trunk.toml` provide a
   Trunk-powered web app from the same Rust code as the native GUI. The public
   URL is `/r7crypto/` for GitHub Pages.
-- `.github/workflows/pages.yml` builds with `trunk build --release` and deploys
-  `dist/` through the official GitHub Pages actions; generated site files are
-  never committed.
+- A final `deploy` job in `.github/workflows/ci.yml` builds with
+  `trunk build --release` and publishes `dist/` through the official GitHub
+  Pages actions. It runs only on pushes to `main` and only after test, lint,
+  wasm and Windows checks pass; generated site files are never committed.
 - A wasm type-check job in CI
   (`cargo check --lib --target wasm32-unknown-unknown --all-features --locked`).
 - `src/viz/job.rs`: shared incremental jobs for native and web. Native runs them
@@ -29,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `crypto.getRandomValues()`; the UI states this explicitly.
 - `rust-toolchain.toml` installs the `wasm32-unknown-unknown` target with the
   pinned toolchain.
+- CI installs Trunk from a prebuilt release instead of compiling it on every
+  run, and the deployment job is named "Deploy web app" — the published build
+  is the full workbench, not a reduced demo.
 
 ## [0.4.0] - 2026-11-21
 
