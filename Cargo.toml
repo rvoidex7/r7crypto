@@ -64,8 +64,12 @@ web-sys = { version = "0.3", features = [
 winresource = "0.1"
 
 [features]
-default = ["gui"]
+default = ["gui", "desktop"]
 gui = ["dep:egui", "dep:eframe", "dep:image"]
+# Only the native binary needs this. Trunk builds the web library with
+# --no-default-features --features gui, so Cargo skips the bin target and the
+# desktop/wasm artifacts cannot collide under the same output filename.
+desktop = []
 
 # Cargo's own manifest lints. Denying unused dependencies keeps the warning we
 # saw on Windows from coming back as a silent warning; note that the lint can
@@ -76,7 +80,7 @@ unused_dependencies = "deny"
 [[bin]]
 name = "r7crypto"
 path = "src/main.rs"
-required-features = ["gui"]
+required-features = ["gui", "desktop"]
 
 [[example]]
 name = "basic_usage"

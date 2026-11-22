@@ -71,8 +71,13 @@ jobs:
       - name: Cache cargo and target
         uses: Swatinem/rust-cache@v2
 
-      - name: Type-check the web library
-        run: cargo check --lib --target wasm32-unknown-unknown --all-features --locked
+      - name: Type-check all wasm targets
+        run: cargo check --lib --bins --target wasm32-unknown-unknown --all-features --locked
+
+      # Mirror Trunk's exact feature set: the desktop-only bin is skipped, so
+      # the cdylib artifact cannot collide with it under the same output name.
+      - name: Type-check the Trunk web build
+        run: cargo check --lib --target wasm32-unknown-unknown --no-default-features --features gui --locked
 
   windows:
     name: Check (Windows)

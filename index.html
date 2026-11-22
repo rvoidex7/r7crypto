@@ -25,6 +25,8 @@
 </head>
 <body>
     <canvas id="r7crypto_canvas"></canvas>
-    <link data-trunk rel="rust" href="Cargo.toml" data-wasm-opt="z">
+    <!-- Skip the desktop-only bin target (it shares the crate name and would
+         collide with the cdylib). The cdylib carries the wasm-bindgen start. -->
+    <link data-trunk rel="rust" href="Cargo.toml" data-cargo-no-default-features data-cargo-features="gui" data-wasm-opt="z">
 </body>
 </html>

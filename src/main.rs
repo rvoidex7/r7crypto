@@ -2,12 +2,16 @@
 
 // Release builds are a desktop program, not a console tool: without this,
 // double-clicking the .exe on Windows opens a terminal window behind the GUI.
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![cfg_attr(
+    all(not(debug_assertions), not(target_arch = "wasm32")),
+    windows_subsystem = "windows"
+)]
 
-use eframe::egui;
-use r7crypto::viz::{icon, R7CryptoApp};
-
+#[cfg(not(target_arch = "wasm32"))]
 fn main() -> Result<(), eframe::Error> {
+    use eframe::egui;
+    use r7crypto::viz::{icon, R7CryptoApp};
+
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([900.0, 700.0])
@@ -26,3 +30,8 @@ fn main() -> Result<(), eframe::Error> {
         Box::new(|_cc| Ok(Box::new(R7CryptoApp::default()))),
     )
 }
+
+// Trunk compiles the library as the web entry point, but Cargo still sees this
+// binary target. It has no native API on wasm32, so keep it as a no-op there.
+#[cfg(target_arch = "wasm32")]
+fn main() {}

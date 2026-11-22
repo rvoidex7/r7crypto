@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Pages actions. It runs only on pushes to `main` and only after test, lint,
   wasm and Windows checks pass; generated site files are never committed.
 - A wasm type-check job in CI
-  (`cargo check --lib --target wasm32-unknown-unknown --all-features --locked`).
+  (`cargo check --lib --bins --target wasm32-unknown-unknown --all-features --locked`).
 - `src/viz/job.rs`: shared incremental jobs for native and web. Native runs them
   on a worker thread; wasm advances them in bounded frame steps, so the UI
   never blocks. Benchmark timing counts only active generation time.
@@ -33,6 +33,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI installs Trunk from a prebuilt release instead of compiling it on every
   run, and the deployment job is named "Deploy web app" — the published build
   is the full workbench, not a reduced demo.
+
+### Fixed
+- Trunk also builds Cargo's binary target for `wasm32`, where `eframe`'s native
+  API is compiled out. `src/main.rs` now has a wasm no-op `main`, so an
+  all-features wasm build succeeds; the actual web entry point remains
+  `src/web.rs` in the library.
+- The bin and cdylib share the crate name, so a plain Trunk build saw two
+  artifacts called `r7crypto` and aborted. The new `desktop` feature gates the
+  native bin; Trunk builds with `--no-default-features --features gui`, leaving
+  only the cdylib. CI type-checks that exact feature set too.
+- The wasm CI check now covers `--bins` as well as `--lib`, so this class of
+  failure is caught before the deploy job runs.
+- Verified the full static site locally with Trunk 0.22.2: `dist/` contains the
+  hashed WASM/JS assets and `/r7crypto/` base URLs.
 
 ## [0.4.0] - 2026-11-21
 
