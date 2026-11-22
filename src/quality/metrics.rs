@@ -266,6 +266,16 @@ impl QualityMetrics {
 
     /// Analyze an existing byte slice.
     pub fn analyze_slice(data: &[u8]) -> Self {
+        // Running the full suite on tiny samples produces meaningless p-values.
+        let nist = (data.len() >= 256).then(|| NistTests::run_all_tests(data));
+        Self::analyze_slice_with_nist(data, nist.as_deref())
+    }
+
+    /// Analyze a slice using NIST results computed by an incremental job.
+    ///
+    /// This keeps the metrics identical to [`Self::analyze_slice`] without
+    /// running the expensive suite twice on the web path.
+    pub(crate) fn analyze_slice_with_nist(data: &[u8], nist: Option<&[(&str, f64)]>) -> Self {
         let shannon = Self::shannon_entropy(data);
         let min_entropy = Self::min_entropy(data);
         let min_entropy_raw = Self::min_entropy_raw(data);
@@ -285,14 +295,12 @@ impl QualityMetrics {
             *frequency.entry(byte).or_insert(0) += 1;
         }
 
-        // Running the full suite on tiny samples produces meaningless p-values.
-        let (nist_failures, nist_tests_run) = if data.len() >= 256 {
-            let results = NistTests::run_all_tests(data);
-            let run = results.len();
-            let failures = results.iter().filter(|(_, p)| *p < 0.01).count();
-            (failures, run)
-        } else {
-            (0, 0)
+        let (nist_failures, nist_tests_run) = match nist.filter(|_| data.len() >= 256) {
+            Some(results) => (
+                results.iter().filter(|(_, p)| *p < 0.01).count(),
+                results.len(),
+            ),
+            None => (0, 0),
         };
 
         Self {
@@ -365,6 +373,21 @@ impl QualityMetrics {
 mod tests {
     use super::*;
     use crate::entropy::SystemEntropy;
+
+    #[test]
+    fn precomputed_nist_results_match_analyze_slice() {
+        let data: Vec<u8> = (0..2048).map(|index| (index * 73 + 11) as u8).collect();
+        let nist = NistTests::run_all_tests(&data);
+
+        let direct = QualityMetrics::analyze_slice(&data);
+        let reused = QualityMetrics::analyze_slice_with_nist(&data, Some(&nist));
+
+        assert_eq!(direct.nist_failures, reused.nist_failures);
+        assert_eq!(direct.nist_tests_run, reused.nist_tests_run);
+        assert_eq!(direct.shannon_entropy, reused.shannon_entropy);
+        assert_eq!(direct.min_entropy, reused.min_entropy);
+        assert_eq!(direct.markov_min_entropy, reused.markov_min_entropy);
+    }
 
     #[test]
     fn shannon_entropy_is_eight_for_full_byte_alphabet() {

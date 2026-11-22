@@ -56,6 +56,24 @@ jobs:
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features --locked -- -D warnings
 
+  wasm:
+    name: Check (WASM)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo and target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Type-check the web library
+        run: cargo check --lib --target wasm32-unknown-unknown --all-features --locked
+
   windows:
     name: Check (Windows)
     runs-on: windows-latest

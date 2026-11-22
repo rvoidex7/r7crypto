@@ -2,6 +2,7 @@
 
 mod app;
 pub mod icon;
+pub(crate) mod job;
 
 pub use app::{R7CryptoApp, Tab};
 

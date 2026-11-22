@@ -1,0 +1,10 @@
+[build]
+target = "index.html"
+dist = "dist"
+# GitHub Pages serves the project site from /r7crypto/.
+public_url = "/r7crypto/"
+locked = true
+
+[serve]
+addresses = ["127.0.0.1"]
+port = 8080

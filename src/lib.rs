@@ -56,6 +56,9 @@ pub mod quality;
 #[cfg(feature = "gui")]
 pub mod viz;
 
+#[cfg(all(feature = "gui", target_arch = "wasm32"))]
+mod web;
+
 // Re-exports for convenience
 pub use crypto::{AvalancheAnalyzer, KeyedStreamCipher, StreamCipher};
 pub use entropy::{EntropySource, SourceKind, SystemEntropy};

@@ -83,7 +83,7 @@ impl SourceKind {
     }
 
     /// Build a fresh source. `bias` is only used by [`Self::Biased`].
-    pub fn build(self, seed: u64, bias: f64) -> Box<dyn EntropySource> {
+    pub fn build(self, seed: u64, bias: f64) -> Box<dyn EntropySource + Send> {
         match self {
             Self::System => Box::new(SystemEntropy::new()),
             Self::ChaCha20 => Box::new(ChaCha20Source::new(seed)),

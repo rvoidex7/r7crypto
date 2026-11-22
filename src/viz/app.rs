@@ -1,16 +1,15 @@
 //! Main GUI application.
 
-use std::sync::mpsc::{self, Receiver, TryRecvError};
-
 use eframe::egui;
 
-use crate::bench::{BenchmarkResult, PerformanceBench};
+use crate::bench::BenchmarkResult;
 use crate::crypto::{AvalancheAnalyzer, AvalancheResult, AvalancheStats, KeyedStreamCipher};
 use crate::entropy::{EntropySource, SourceKind, ARENA_SEED};
 use crate::learn::entropy_visual::interpret_entropy;
 use crate::learn::{EncryptionProcess, EntropyProcess, NistProcess};
-use crate::quality::{NistTests, QualityMetrics};
+use crate::quality::QualityMetrics;
 
+use super::job::{BackgroundJob, BenchmarkJob, JobStatus, TestJob, TestOutcome};
 use super::{FIELD_GAP, SECTION_GAP};
 
 /// Height of the header icon, sized to sit beside the two header text lines.
@@ -18,12 +17,6 @@ const HEADER_ICON_SIZE: f32 = 40.0;
 
 /// Default `P(1)` for the biased source.
 const DEFAULT_BIAS: f64 = 0.75;
-
-/// Result of a background quality-analysis run.
-struct TestOutcome {
-    metrics: QualityMetrics,
-    nist: Vec<(String, f64)>,
-}
 
 /// Direction of the last cipher action.
 ///
@@ -84,14 +77,15 @@ pub struct R7CryptoApp {
     nist_results: Vec<(String, f64)>,
     quality_sample_size: usize,
     is_testing: bool,
-    test_rx: Option<Receiver<TestOutcome>>,
+    test_job: Option<BackgroundJob<TestOutcome>>,
     test_error: Option<String>,
 
     // Benchmark tab state.
     bench_result: Option<BenchmarkResult>,
     bench_size: usize,
     is_benchmarking: bool,
-    bench_rx: Option<Receiver<BenchmarkResult>>,
+    bench_job: Option<BackgroundJob<BenchmarkResult>>,
+    bench_error: Option<String>,
 
     // Learn tab state.
     learn_mode: LearnMode,
@@ -129,12 +123,13 @@ impl Default for R7CryptoApp {
             nist_results: Vec::new(),
             quality_sample_size: 100_000,
             is_testing: false,
-            test_rx: None,
+            test_job: None,
             test_error: None,
             bench_result: None,
             bench_size: 1_000_000,
             is_benchmarking: false,
-            bench_rx: None,
+            bench_job: None,
+            bench_error: None,
             learn_mode: LearnMode::XorCipher,
             learn_process: EncryptionProcess::new(),
             learn_input: String::from("Hello"),
@@ -219,6 +214,16 @@ impl R7CryptoApp {
         self.is_benchmarking
     }
 
+    /// Error from the last failed quality job.
+    pub fn test_error(&self) -> Option<&str> {
+        self.test_error.as_deref()
+    }
+
+    /// Error from the last failed benchmark job.
+    pub fn bench_error(&self) -> Option<&str> {
+        self.bench_error.as_deref()
+    }
+
     /// Metrics from the last completed analysis.
     pub fn quality_metrics(&self) -> Option<&QualityMetrics> {
         self.quality_metrics.as_ref()
@@ -277,11 +282,12 @@ impl R7CryptoApp {
         self.quality_metrics = None;
         self.nist_results.clear();
         self.test_error = None;
-        self.test_rx = None;
+        self.test_job = None;
         self.is_testing = false;
 
         self.bench_result = None;
-        self.bench_rx = None;
+        self.bench_error = None;
+        self.bench_job = None;
         self.is_benchmarking = false;
     }
 
@@ -375,6 +381,12 @@ impl eframe::App for R7CryptoApp {
         // Poll background jobs before rendering so results appear promptly.
         self.poll_test_job();
         self.poll_bench_job();
+
+        // On wasm a job only advances while frames are being produced. Native
+        // threads benefit too: the spinner stops as soon as the result lands.
+        if self.test_job.is_some() || self.bench_job.is_some() {
+            ui.ctx().request_repaint();
+        }
 
         egui::CentralPanel::default().show(ui, |ui| {
             self.render_header(ui);
@@ -716,49 +728,40 @@ impl R7CryptoApp {
 
     /// Poll the background quality-analysis job.
     fn poll_test_job(&mut self) {
-        let mut outcome = None;
-        let mut disconnected = false;
+        let status = self.test_job.as_mut().map(|job| job.poll());
 
-        if let Some(rx) = self.test_rx.as_ref() {
-            match rx.try_recv() {
-                Ok(result) => outcome = Some(result),
-                Err(TryRecvError::Empty) => {}
-                Err(TryRecvError::Disconnected) => disconnected = true,
+        match status {
+            Some(JobStatus::Ready(outcome)) => {
+                self.quality_metrics = Some(outcome.metrics);
+                self.nist_results = outcome.nist;
+                self.is_testing = false;
+                self.test_job = None;
             }
-        }
-
-        if let Some(outcome) = outcome {
-            self.quality_metrics = Some(outcome.metrics);
-            self.nist_results = outcome.nist;
-            self.is_testing = false;
-            self.test_rx = None;
-        } else if disconnected {
-            self.is_testing = false;
-            self.test_rx = None;
-            self.test_error = Some("The analysis worker stopped unexpectedly.".to_string());
+            Some(JobStatus::Failed(error)) => {
+                self.is_testing = false;
+                self.test_job = None;
+                self.test_error = Some(error);
+            }
+            Some(JobStatus::Pending) | None => {}
         }
     }
 
     /// Poll the background benchmark job.
     fn poll_bench_job(&mut self) {
-        let mut result = None;
-        let mut disconnected = false;
+        let status = self.bench_job.as_mut().map(|job| job.poll());
 
-        if let Some(rx) = self.bench_rx.as_ref() {
-            match rx.try_recv() {
-                Ok(benchmark) => result = Some(benchmark),
-                Err(TryRecvError::Empty) => {}
-                Err(TryRecvError::Disconnected) => disconnected = true,
+        match status {
+            Some(JobStatus::Ready(benchmark)) => {
+                self.bench_result = Some(benchmark);
+                self.is_benchmarking = false;
+                self.bench_job = None;
             }
-        }
-
-        if let Some(benchmark) = result {
-            self.bench_result = Some(benchmark);
-            self.is_benchmarking = false;
-            self.bench_rx = None;
-        } else if disconnected {
-            self.is_benchmarking = false;
-            self.bench_rx = None;
+            Some(JobStatus::Failed(error)) => {
+                self.is_benchmarking = false;
+                self.bench_job = None;
+                self.bench_error = Some(error);
+            }
+            Some(JobStatus::Pending) | None => {}
         }
     }
 
@@ -767,6 +770,10 @@ impl R7CryptoApp {
         ui.heading("Quality Analysis");
         ui.label("Analyze entropy quality with statistical tests.");
         ui.label(format!("Analyzing: {}", self.entropy.name()));
+        #[cfg(target_arch = "wasm32")]
+        if self.source_kind == SourceKind::System {
+            ui.label("In the browser, System uses crypto.getRandomValues().");
+        }
         ui.add_space(10.0);
 
         ui.horizontal(|ui| {
@@ -810,28 +817,11 @@ impl R7CryptoApp {
     fn start_test_job(&mut self) {
         self.is_testing = true;
         self.test_error = None;
-        let sample_size = self.quality_sample_size;
-        let kind = self.source_kind;
-        let bias = self.bias_probability;
-        let (tx, rx) = mpsc::channel();
-
-        std::thread::spawn(move || {
-            let mut source = kind.build(ARENA_SEED, bias);
-            let mut data = vec![0u8; sample_size];
-            source.fill_bytes(&mut data);
-
-            // Both analyses share one sample so the displayed metrics and NIST
-            // results describe exactly the same bytes.
-            let metrics = QualityMetrics::analyze_slice(&data);
-            let nist = NistTests::run_all_tests(&data)
-                .into_iter()
-                .map(|(name, p_value)| (name.to_string(), p_value))
-                .collect();
-
-            let _ = tx.send(TestOutcome { metrics, nist });
-        });
-
-        self.test_rx = Some(rx);
+        self.test_job = Some(BackgroundJob::spawn(TestJob::new(
+            self.source_kind,
+            self.bias_probability,
+            self.quality_sample_size,
+        )));
     }
 
     fn render_metrics_section(&mut self, ui: &mut egui::Ui) {
@@ -977,6 +967,10 @@ impl R7CryptoApp {
         ui.heading("Performance Benchmark");
         ui.label("Measure entropy generation speed.");
         ui.label(format!("Benchmarking: {}", self.entropy.name()));
+        #[cfg(target_arch = "wasm32")]
+        if self.source_kind == SourceKind::System {
+            ui.label("In the browser, System uses crypto.getRandomValues().");
+        }
         ui.add_space(10.0);
 
         ui.horizontal(|ui| {
@@ -999,9 +993,12 @@ impl R7CryptoApp {
             if self.is_benchmarking {
                 ui.spinner();
                 ui.label("Benchmarking in background...");
-                ui.ctx().request_repaint();
             }
         });
+
+        if let Some(error) = &self.bench_error {
+            ui.colored_label(egui::Color32::RED, error);
+        }
 
         ui.add_space(20.0);
 
@@ -1044,18 +1041,12 @@ impl R7CryptoApp {
 
     fn start_bench_job(&mut self) {
         self.is_benchmarking = true;
-        let size = self.bench_size;
-        let kind = self.source_kind;
-        let bias = self.bias_probability;
-        let (tx, rx) = mpsc::channel();
-
-        std::thread::spawn(move || {
-            let mut source = kind.build(ARENA_SEED, bias);
-            let result = PerformanceBench::benchmark(&mut source, size);
-            let _ = tx.send(result);
-        });
-
-        self.bench_rx = Some(rx);
+        self.bench_error = None;
+        self.bench_job = Some(BackgroundJob::spawn(BenchmarkJob::new(
+            self.source_kind,
+            self.bias_probability,
+            self.bench_size,
+        )));
     }
 
     /// Render the "Avalanche" tab: SHA-256 single-bit diffusion.
@@ -1995,5 +1986,67 @@ mod tests {
         let mut app = R7CryptoApp::default();
         app.set_sample_size(0);
         assert_eq!(app.sample_size(), 1);
+    }
+
+    struct FailingBenchJob;
+
+    impl crate::viz::job::Job for FailingBenchJob {
+        type Output = BenchmarkResult;
+
+        fn poll(&mut self) -> JobStatus<Self::Output> {
+            JobStatus::Failed("synthetic failure".to_string())
+        }
+    }
+
+    struct FailingTestJob;
+
+    impl crate::viz::job::Job for FailingTestJob {
+        type Output = TestOutcome;
+
+        fn poll(&mut self) -> JobStatus<Self::Output> {
+            JobStatus::Failed("synthetic failure".to_string())
+        }
+    }
+
+    #[test]
+    fn failed_benchmark_job_is_surfaced_and_clears_the_spinner() {
+        let mut app = R7CryptoApp {
+            is_benchmarking: true,
+            bench_job: Some(BackgroundJob::spawn(FailingBenchJob)),
+            ..R7CryptoApp::default()
+        };
+
+        // Native jobs deliver through a worker thread, so the first poll can
+        // still be pending. Keep polling until the result is observed.
+        for _ in 0..1_000 {
+            if !app.is_benchmarking() {
+                break;
+            }
+            app.poll_bench_job();
+            std::thread::yield_now();
+        }
+
+        assert!(!app.is_benchmarking());
+        assert_eq!(app.bench_error(), Some("synthetic failure"));
+    }
+
+    #[test]
+    fn failed_test_job_is_surfaced_and_clears_the_spinner() {
+        let mut app = R7CryptoApp {
+            is_testing: true,
+            test_job: Some(BackgroundJob::spawn(FailingTestJob)),
+            ..R7CryptoApp::default()
+        };
+
+        for _ in 0..1_000 {
+            if !app.is_testing() {
+                break;
+            }
+            app.poll_test_job();
+            std::thread::yield_now();
+        }
+
+        assert!(!app.is_testing());
+        assert_eq!(app.test_error(), Some("synthetic failure"));
     }
 }

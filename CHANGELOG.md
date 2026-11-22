@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Browser/WASM build**: `src/web.rs`, `index.html` and `Trunk.toml` provide a
+  Trunk-powered web app from the same Rust code as the native GUI. The public
+  URL is `/r7crypto/` for GitHub Pages.
+- `.github/workflows/pages.yml` builds with `trunk build --release` and deploys
+  `dist/` through the official GitHub Pages actions; generated site files are
+  never committed.
+- A wasm type-check job in CI
+  (`cargo check --lib --target wasm32-unknown-unknown --all-features --locked`).
+- `src/viz/job.rs`: shared incremental jobs for native and web. Native runs them
+  on a worker thread; wasm advances them in bounded frame steps, so the UI
+  never blocks. Benchmark timing counts only active generation time.
+
+### Changed
+- Test and Benchmark jobs now use the same incremental pipeline. NIST tests run
+  one per step and metrics reuse those results instead of recomputing the suite.
+- `SourceKind::build` returns `Box<dyn EntropySource + Send>` so seeded sources
+  can move into native worker threads.
+- On wasm, `getrandom/js` makes the **System** source use the browser's
+  `crypto.getRandomValues()`; the UI states this explicitly.
+- `rust-toolchain.toml` installs the `wasm32-unknown-unknown` target with the
+  pinned toolchain.
+
 ## [0.4.0] - 2026-11-21
 
 ### Changed

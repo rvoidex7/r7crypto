@@ -16,19 +16,39 @@ with quality testing, visualization and **interactive educational tools**.
 ## Features
 
 - **🔌 Trait-based Design**: Any RNG can be plugged in via the `EntropySource` trait
+- **🎛️ RNG Arena**: Switch between seven built-in sources and tune bias live
 - **🔬 Quality Testing**: NIST SP 800-22 tests, Shannon entropy, min-entropy calculations
 - **Cryptographic Use**: Real ChaCha20 encryption plus an educational XOR one-time pad
 - **📊 Real-time Visualization**: egui-based GUI for interactive exploration
+- **🔀 Avalanche**: See SHA-256 single-bit diffusion in a 16×16 output-bit grid
 - **⚡ Performance Benchmarks**: Measure throughput and latency of entropy sources
 - **🎓 Interactive Learning**: Step-by-step visualizations of cryptographic operations
+- **🌐 One codebase**: Native Linux/Windows binary and browser/WASM build from the same commit
 
 ## Screenshots
 
-| Use Tab | Test Tab | Learn Tab |
-|---------|----------|-----------|
-| Stream cipher encryption | Quality metrics & NIST tests | Step-by-step XOR visualization |
+Screenshots are being refreshed for the current tab set. Until then, try the
+[browser demo](https://rvoidex7.github.io/r7crypto/) or run the native GUI
+locally — both render the same egui interface.
 
 ## Quick Start
+
+### Try it in the browser
+
+The demo is deployed from `main` with GitHub Pages at
+<https://rvoidex7.github.io/r7crypto/>. No installation is needed. In the
+browser, the **System** source uses the Web Crypto API
+(`crypto.getRandomValues()`) through `getrandom/js`.
+
+To build it locally:
+
+```bash
+cargo install trunk
+trunk serve
+```
+
+`trunk build --release` writes the static site to `dist/`. The output directory
+is gitignored; CI publishes it, not the repository.
 
 ### Run the GUI
 
@@ -74,6 +94,9 @@ cargo run --example quality_check
 
 ## GUI Tabs
 
+The header selects the active entropy source (RNG Arena) and, when supported,
+its `P(1)` bias. The Test and Benchmark tabs use that selection.
+
 ### 📝 Use Tab
 Encrypt and decrypt UTF-8 text with ChaCha20 (256-bit key, 96-bit nonce). The
 passphrase is hashed with SHA-256 and the nonce can be regenerated at any time.
@@ -93,6 +116,9 @@ Measure entropy source performance:
 - Throughput (MB/s)
 - Latency per byte (µs)
 
+These numbers describe source generation only, not cryptographic operation
+speed. Operation benchmarks are planned separately.
+
 ### 🎓 Learn Tab
 **Interactive educational visualizations** that teach cryptographic concepts step-by-step:
 
@@ -104,6 +130,11 @@ Measure entropy source performance:
   - Adjustable animation speed
 
 Perfect for understanding how stream ciphers actually work!
+
+### 🔀 Avalanche Tab
+Flip one input bit of a SHA-256 message and inspect which of the 256 output bits
+changed. The grid is a deterministic teaching aid; the full distribution and
+weak-function comparison are still being expanded.
 
 ## Usage
 
@@ -214,7 +245,10 @@ r7crypto/
 │   ├── quality/      # Metrics, NIST tests
 │   ├── bench/        # Performance benchmarking
 │   ├── learn/        # Educational visualizations
-│   └── viz/          # GUI components (egui)
+│   ├── viz/          # GUI components (egui) + jobs
+│   └── web.rs        # WASM bootstrap (Trunk entry point)
+├── index.html        # Canvas page for the web build
+├── Trunk.toml        # Web build configuration
 ├── examples/         # Usage examples
 └── tests/            # Integration tests
 ```

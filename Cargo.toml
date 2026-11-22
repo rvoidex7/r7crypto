@@ -45,6 +45,19 @@ image = { version = "0.25", optional = true, default-features = false, features 
 [dev-dependencies]
 egui_kittest = { version = "0.37", features = ["eframe"] }
 
+# Web-only glue. Kept target-scoped so native builds stay free of JS shims.
+# `getrandom/js` makes SystemEntropy use the browser CSPRNG on wasm32.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = [
+    "Document",
+    "HtmlCanvasElement",
+    "Window",
+    "console",
+] }
+
 # Embeds assets/icons/icon.ico into the Windows executable. Build-time only and
 # only when compiling for Windows.
 [target.'cfg(windows)'.build-dependencies]
