@@ -5,4 +5,7 @@
 #
 # Note: `deny` / `warn` / `allow` arrays are not valid `clippy.toml` fields.
 # Lint levels belong in `Cargo.toml` under `[lints.clippy]`. Keep this file for
-# lint-specific options such as `disallowed-methods` or `too-many-arguments-threshold`.
+# lint-specific options such as `too-many-arguments-threshold`.
+#
+# Host-only API restrictions live in `ci/wasm-clippy/clippy.toml` so the native
+# gate is unaffected; the WASM gate selects it via CLIPPY_CONF_DIR.

@@ -44,6 +44,9 @@ image = { version = "0.25", optional = true, default-features = false, features 
 
 [dev-dependencies]
 egui_kittest = { version = "0.37", features = ["eframe"] }
+# The harness needs eframe's renderer even when the crate's own `gui` feature
+# is off; otherwise the feature-matrix check fails inside egui_kittest.
+eframe = { version = "0.37", default-features = false, features = ["glow"] }
 
 # Web-only glue. Kept target-scoped so native builds stay free of JS shims.
 # `getrandom/js` makes SystemEntropy use the browser CSPRNG on wasm32.

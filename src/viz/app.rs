@@ -2055,13 +2055,14 @@ mod tests {
         };
 
         // Native jobs deliver through a worker thread, so the first poll can
-        // still be pending. Keep polling until the result is observed.
-        for _ in 0..1_000 {
+        // still be pending. `yield_now` alone can starve the worker on a busy
+        // test runner; a short sleep makes this deterministic.
+        for _ in 0..256 {
             if !app.is_benchmarking() {
                 break;
             }
             app.poll_bench_job();
-            std::thread::yield_now();
+            std::thread::sleep(std::time::Duration::from_millis(1));
         }
 
         assert!(!app.is_benchmarking());
@@ -2076,16 +2077,71 @@ mod tests {
             ..R7CryptoApp::default()
         };
 
-        for _ in 0..1_000 {
+        for _ in 0..256 {
             if !app.is_testing() {
                 break;
             }
             app.poll_test_job();
-            std::thread::yield_now();
+            std::thread::sleep(std::time::Duration::from_millis(1));
         }
 
         assert!(!app.is_testing());
         assert_eq!(app.test_error(), Some("synthetic failure"));
+    }
+
+    #[test]
+    fn benchmark_spinner_clears_within_a_bounded_number_of_polls() {
+        let mut app = R7CryptoApp {
+            bench_size: 10_000,
+            ..R7CryptoApp::default()
+        };
+        app.start_bench_job();
+        assert!(app.is_benchmarking());
+
+        let mut polls = 0;
+        for _ in 0..256 {
+            polls += 1;
+            app.poll_bench_job();
+            std::thread::sleep(std::time::Duration::from_millis(1));
+            if !app.is_benchmarking() {
+                break;
+            }
+        }
+
+        assert!(
+            !app.is_benchmarking(),
+            "the benchmark spinner was still on after {polls} polls"
+        );
+        assert!(app.bench_result().is_some(), "no result was produced");
+        assert_eq!(app.bench_error(), None);
+    }
+
+    #[test]
+    fn test_spinner_clears_within_a_bounded_number_of_polls() {
+        let mut app = R7CryptoApp {
+            quality_sample_size: 4_096,
+            ..R7CryptoApp::default()
+        };
+        app.start_test_job();
+        assert!(app.is_testing());
+
+        let mut polls = 0;
+        for _ in 0..256 {
+            polls += 1;
+            app.poll_test_job();
+            // `yield_now` is not enough on a busy test runner: the worker can
+            // stay starved while the polling loop spins through its budget.
+            std::thread::sleep(std::time::Duration::from_millis(1));
+            if !app.is_testing() {
+                break;
+            }
+        }
+        assert!(
+            !app.is_testing(),
+            "the test spinner was still on after {polls} polls"
+        );
+        assert!(app.quality_metrics().is_some(), "no result was produced");
+        assert_eq!(app.test_error(), None);
     }
 
     #[test]

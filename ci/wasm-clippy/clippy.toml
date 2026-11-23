@@ -1,0 +1,9 @@
+# Clippy configuration used only by the WASM gate (via CLIPPY_CONF_DIR).
+#
+# These compile on wasm32 but panic or do nothing at runtime. Native builds use
+# the repository-root clippy.toml and are deliberately not restricted.
+disallowed-methods = [
+    { path = "std::time::Instant::now", reason = "time is unavailable on wasm32; use a platform-safe clock abstraction" },
+    { path = "std::time::SystemTime::now", reason = "time is unavailable on wasm32; use a platform-safe clock abstraction" },
+    { path = "std::thread::sleep", reason = "blocking sleep is unavailable on wasm32" },
+]

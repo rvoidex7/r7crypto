@@ -359,14 +359,40 @@ impl Job for BenchmarkJob {
 mod tests {
     use super::*;
 
-    fn finish<J: Job>(mut job: J) -> J::Output {
-        loop {
+    /// Upper bound for a single job in a test. A real job needs only a handful
+    /// of polls (sample size / 16 KiB + 10), so 256 is generous but still turns
+    /// an infinite `Pending` loop into an explicit test failure.
+    const MAX_POLLS: usize = 256;
+
+    fn finish_within<J: Job>(mut job: J, max_polls: usize, label: &str) -> J::Output {
+        for _ in 0..max_polls {
             match job.poll() {
                 JobStatus::Ready(output) => return output,
                 JobStatus::Pending => {}
-                JobStatus::Failed(error) => panic!("job failed: {error}"),
+                JobStatus::Failed(error) => panic!("{label} failed: {error}"),
             }
         }
+        panic!("{label} did not finish within {max_polls} polls (possible hang)");
+    }
+
+    fn finish<J: Job>(job: J) -> J::Output {
+        finish_within(job, MAX_POLLS, "job")
+    }
+
+    struct NeverCompletingJob;
+
+    impl Job for NeverCompletingJob {
+        type Output = ();
+
+        fn poll(&mut self) -> JobStatus<Self::Output> {
+            JobStatus::Pending
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "did not finish within")]
+    fn bounded_helper_catches_a_hanging_job() {
+        finish_within(NeverCompletingJob, 8, "hanging job");
     }
 
     #[test]
@@ -449,6 +475,66 @@ mod tests {
         assert_eq!(result.throughput_mbps, 0.0);
     }
 
+    #[test]
+    fn every_source_completes_a_test_job_within_a_bounded_number_of_polls() {
+        for kind in SourceKind::ALL {
+            let outcome = finish_within(TestJob::new(kind, 0.75, 8_000), MAX_POLLS, kind.label());
+            assert_eq!(
+                outcome.metrics.total_bytes,
+                8_000,
+                "{} produced the wrong amount of data",
+                kind.label()
+            );
+        }
+    }
+
+    #[test]
+    fn every_source_completes_a_benchmark_job_within_a_bounded_number_of_polls() {
+        for kind in SourceKind::ALL {
+            let result = finish_within(
+                BenchmarkJob::new(kind, 0.75, 40_000),
+                MAX_POLLS,
+                kind.label(),
+            );
+            assert_eq!(result.bytes_generated, 40_000, "{}", kind.label());
+            assert!(
+                result.throughput_mbps.is_finite() && result.throughput_mbps > 0.0,
+                "{} reported a non-finite throughput",
+                kind.label()
+            );
+            assert!(
+                result.latency_us.is_finite() && result.latency_us > 0.0,
+                "{} reported a non-finite latency",
+                kind.label()
+            );
+        }
+    }
+
+    #[test]
+    fn benchmark_chunk_boundaries_are_bounded_and_finite() {
+        for size in [0, 1, CHUNK_BYTES - 1, CHUNK_BYTES, CHUNK_BYTES + 1, 40_000] {
+            let result = finish_within(
+                BenchmarkJob::new(SourceKind::Counter, 0.75, size),
+                MAX_POLLS,
+                "boundary benchmark",
+            );
+            assert_eq!(result.bytes_generated, size, "size {size}");
+            if size == 0 {
+                assert_eq!(result.throughput_mbps, 0.0);
+                assert_eq!(result.latency_us, 0.0);
+            } else {
+                assert!(
+                    result.throughput_mbps.is_finite() && result.throughput_mbps > 0.0,
+                    "size {size} reported a non-finite throughput"
+                );
+                assert!(
+                    result.latency_us.is_finite() && result.latency_us > 0.0,
+                    "size {size} reported a non-finite latency"
+                );
+            }
+        }
+    }
+
     #[cfg(not(target_arch = "wasm32"))]
     #[test]
     fn native_background_job_delivers_a_result() {
@@ -457,7 +543,7 @@ mod tests {
         let result = loop {
             match handle.poll() {
                 JobStatus::Ready(result) => break result,
-                JobStatus::Pending => std::thread::yield_now(),
+                JobStatus::Pending => std::thread::sleep(std::time::Duration::from_millis(1)),
                 JobStatus::Failed(error) => panic!("worker failed: {error}"),
             }
         };
@@ -514,7 +600,7 @@ mod tests {
         let mut handle = BackgroundJob::spawn(FailingJob);
         for _ in 0..1_000 {
             match handle.poll() {
-                JobStatus::Pending => std::thread::yield_now(),
+                JobStatus::Pending => std::thread::sleep(std::time::Duration::from_millis(1)),
                 JobStatus::Failed(error) => {
                     assert_eq!(error, "synthetic job failure");
                     return;
@@ -534,7 +620,7 @@ mod tests {
         let background = loop {
             match handle.poll() {
                 JobStatus::Ready(result) => break result,
-                JobStatus::Pending => std::thread::yield_now(),
+                JobStatus::Pending => std::thread::sleep(std::time::Duration::from_millis(1)),
                 JobStatus::Failed(error) => panic!("worker failed: {error}"),
             }
         };

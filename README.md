@@ -50,6 +50,19 @@ is gitignored; CI publishes it, not the repository.
 cargo run --release
 ```
 
+### Quality gate
+
+Run the same checks as CI locally:
+
+```bash
+./scripts/check.sh
+```
+
+It covers formatting, Clippy, tests, the feature matrix, wasm type-checks and a
+wasm-only lint that rejects host-only APIs such as `std::time::Instant::now`.
+Those calls compile for wasm32 but panic in the browser, so native tests alone
+cannot catch them.
+
 ### Prebuilt binaries
 
 Every release has Linux and Windows builds on the

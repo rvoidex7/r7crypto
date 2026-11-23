@@ -28,7 +28,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ordered NIST steps; SHA-256 avalanche determinism and bit order; distinct
   nonces and ChaCha20 malleability; benchmark repeatability and zero-byte
   handling; spinner/error visibility; bias and sample-size sliders reaching
-  jobs; and the full NIST verdict table. The suite now has 191 tests.
+  jobs; and the full NIST verdict table. The suite now has 197 tests.
+- `scripts/check.sh`: one local command that mirrors the full CI gate, including
+  the feature matrix and the wasm-specific checks.
+- A wasm API guard in `ci/wasm-clippy/clippy.toml` plus a CI/Clippy step that denies
+  `clippy::disallowed_methods` for the web build. Host-only calls such as
+  `std::time::Instant::now` compile on `wasm32-unknown-unknown` but panic in the
+  browser; they now fail the build before runtime.
+- Bounded completion tests for every entropy source and both job types, boundary
+  sample sizes, a self-check that the bounded helper detects a hanging job, and
+  UI tests asserting that the Test/Benchmark spinners clear within a poll limit.
 
 ### Changed
 - Removed the placeholder "Screenshots" section from the README; no screenshots
