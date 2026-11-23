@@ -170,4 +170,45 @@ mod tests {
         );
         assert!(AvalancheAnalyzer::compare_single_bit(b"", 0).is_none());
     }
+
+    #[test]
+    fn single_bit_comparison_is_deterministic() {
+        let first = AvalancheAnalyzer::compare_single_bit(b"determinism", 40).unwrap();
+        let second = AvalancheAnalyzer::compare_single_bit(b"determinism", 40).unwrap();
+
+        assert_eq!(first, second);
+    }
+
+    #[test]
+    fn bit_index_is_msb_first_and_out_of_range_is_rejected() {
+        let data = b"A";
+        let first_bit = AvalancheAnalyzer::compare_single_bit(data, 0).unwrap();
+        let mut flipped = *data;
+        flipped[0] ^= 0b1000_0000;
+        assert_eq!(first_bit.modified, AvalancheAnalyzer::sha256(&flipped));
+
+        let last_bit = AvalancheAnalyzer::compare_single_bit(data, 7).unwrap();
+        let mut flipped = *data;
+        flipped[0] ^= 0b0000_0001;
+        assert_eq!(last_bit.modified, AvalancheAnalyzer::sha256(&flipped));
+
+        assert!(AvalancheAnalyzer::compare_single_bit(data, 8).is_none());
+    }
+
+    #[test]
+    fn statistics_are_consistent_and_repeatable() {
+        let first = AvalancheAnalyzer::analyze_sha256(b"r7crypto");
+        let second = AvalancheAnalyzer::analyze_sha256(b"r7crypto");
+
+        assert_eq!(first, second);
+        assert!(first.samples > 0);
+        assert!(
+            (first.mean_changed_bits - first.mean_flip_percentage * 256.0 / 100.0).abs() < 1e-9
+        );
+        for sample in 0..first.samples {
+            let result = AvalancheAnalyzer::compare_single_bit(b"r7crypto", sample).unwrap();
+            assert!(result.flip_percentage >= first.min_flip_percentage);
+            assert!(result.flip_percentage <= first.max_flip_percentage);
+        }
+    }
 }

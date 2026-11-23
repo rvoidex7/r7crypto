@@ -20,6 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `src/viz/job.rs`: shared incremental jobs for native and web. Native runs them
   on a worker thread; wasm advances them in bounded frame steps, so the UI
   never blocks. Benchmark timing counts only active generation time.
+- `tests/use_ui_test.rs` and `tests/learn_ui_test.rs`: widget-level coverage for
+  the Use tab and all three Learn lessons (input, buttons, output, error state
+  and determinism).
+- More unit and headless tests across jobs, crypto and the UI: job failure
+  propagation, poll-after-completion errors and native/incremental parity;
+  ordered NIST steps; SHA-256 avalanche determinism and bit order; distinct
+  nonces and ChaCha20 malleability; benchmark repeatability and zero-byte
+  handling; spinner/error visibility; bias and sample-size sliders reaching
+  jobs; and the full NIST verdict table. The suite now has 191 tests.
 
 ### Changed
 - Removed the placeholder "Screenshots" section from the README; no screenshots
@@ -49,6 +58,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   failure is caught before the deploy job runs.
 - Verified the full static site locally with Trunk 0.22.2: `dist/` contains the
   hashed WASM/JS assets and `/r7crypto/` base URLs.
+- The Learn lesson speed controls and the Shannon/NIST input rows now wrap and
+  constrain their widths, so every control stays visible and clickable at
+  360 px. Benchmarking zero bytes reports zero throughput/latency instead of
+  `NaN`.
 
 ## [0.4.0] - 2026-11-21
 

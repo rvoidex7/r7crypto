@@ -464,4 +464,112 @@ mod tests {
 
         assert_eq!(result.bytes_generated, 10_000);
     }
+
+    #[test]
+    fn polling_after_completion_reports_a_failure() {
+        let mut test_job = TestJob::new(SourceKind::Counter, 0.75, 512);
+        loop {
+            match test_job.poll() {
+                JobStatus::Pending => {}
+                JobStatus::Ready(_) => break,
+                JobStatus::Failed(error) => panic!("unexpected failure: {error}"),
+            }
+        }
+        match test_job.poll() {
+            JobStatus::Failed(error) => {
+                assert!(error.contains("polled after completion"), "{error}")
+            }
+            _ => panic!("expected a failure after completion"),
+        }
+
+        let mut bench_job = BenchmarkJob::new(SourceKind::Counter, 0.75, 512);
+        loop {
+            match bench_job.poll() {
+                JobStatus::Pending => {}
+                JobStatus::Ready(_) => break,
+                JobStatus::Failed(error) => panic!("unexpected failure: {error}"),
+            }
+        }
+        match bench_job.poll() {
+            JobStatus::Failed(error) => {
+                assert!(error.contains("polled after completion"), "{error}")
+            }
+            _ => panic!("expected a failure after completion"),
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[test]
+    fn failed_job_status_propagates_through_the_native_handle() {
+        struct FailingJob;
+
+        impl Job for FailingJob {
+            type Output = ();
+
+            fn poll(&mut self) -> JobStatus<Self::Output> {
+                JobStatus::Failed("synthetic job failure".to_string())
+            }
+        }
+
+        let mut handle = BackgroundJob::spawn(FailingJob);
+        for _ in 0..1_000 {
+            match handle.poll() {
+                JobStatus::Pending => std::thread::yield_now(),
+                JobStatus::Failed(error) => {
+                    assert_eq!(error, "synthetic job failure");
+                    return;
+                }
+                JobStatus::Ready(_) => panic!("failing job produced output"),
+            }
+        }
+        panic!("the worker never delivered its failure");
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[test]
+    fn native_test_job_matches_incremental_polling() {
+        let incremental = finish(TestJob::new(SourceKind::ChaCha20, 0.75, 4096));
+
+        let mut handle = BackgroundJob::spawn(TestJob::new(SourceKind::ChaCha20, 0.75, 4096));
+        let background = loop {
+            match handle.poll() {
+                JobStatus::Ready(result) => break result,
+                JobStatus::Pending => std::thread::yield_now(),
+                JobStatus::Failed(error) => panic!("worker failed: {error}"),
+            }
+        };
+
+        assert_eq!(background.nist, incremental.nist);
+        assert_eq!(
+            background.metrics.total_bytes,
+            incremental.metrics.total_bytes
+        );
+        assert_eq!(
+            background.metrics.shannon_entropy,
+            incremental.metrics.shannon_entropy
+        );
+        assert_eq!(
+            background.metrics.markov_min_entropy,
+            incremental.metrics.markov_min_entropy
+        );
+    }
+
+    #[test]
+    fn nist_steps_match_the_suite_in_order() {
+        let mut source = SourceKind::Counter.build(ARENA_SEED, 0.75);
+        let mut data = vec![0u8; 4096];
+        source.fill_bytes(&mut data);
+        let suite: Vec<_> = NistTests::run_all_tests(&data)
+            .into_iter()
+            .map(|(name, p_value)| (name.to_string(), p_value))
+            .collect();
+
+        for (index, (name, p_value)) in suite.iter().enumerate() {
+            let (step_name, step_p_value) = nist_step(&data, index);
+            assert_eq!(step_name, name.as_str());
+            assert_eq!(step_p_value, *p_value);
+            assert_eq!(step_name, NIST_NAMES[index]);
+        }
+        assert_eq!(suite.len(), NIST_NAMES.len());
+    }
 }

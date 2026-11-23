@@ -131,4 +131,63 @@ mod tests {
         assert_eq!(process.steps[0].character, '🔐');
         assert_eq!(process.steps[3].byte_offset, 3);
     }
+
+    #[test]
+    fn navigation_is_bounded_and_empty_input_has_no_steps() {
+        let mut process = EncryptionProcess::new();
+        process.start("AB");
+
+        process.prev_step();
+        assert_eq!(process.current_step_index, 0, "prev must not underflow");
+        process.next_step();
+        assert_eq!(process.current_step_index, 1);
+        process.next_step();
+        assert_eq!(process.current_step_index, 1, "next must not overflow");
+        assert!(!process.is_playing);
+
+        process.toggle_play();
+        assert!(process.is_playing);
+        process.toggle_play();
+        assert!(!process.is_playing);
+
+        process.start("");
+        assert!(process.steps.is_empty());
+        assert!(process.current_step().is_none());
+        assert_eq!(process.current_step_index, 0);
+    }
+
+    #[test]
+    fn update_advances_playing_process_only_after_the_interval() {
+        let mut process = EncryptionProcess::new();
+        process.start("ABC");
+        process.speed = 1.0;
+
+        process.update(10.0);
+        assert_eq!(process.current_step_index, 0);
+
+        process.toggle_play();
+        process.update(10.5);
+        assert_eq!(process.current_step_index, 0, "too early to advance");
+        process.update(11.5);
+        assert_eq!(process.current_step_index, 1);
+
+        process.toggle_play();
+        process.update(20.0);
+        assert_eq!(
+            process.current_step_index, 1,
+            "paused process must not advance"
+        );
+    }
+
+    #[test]
+    fn every_step_satisfies_the_xor_identity() {
+        let mut process = EncryptionProcess::new();
+        process.start("ş🔐Z");
+
+        for step in &process.steps {
+            assert_eq!(step.input_byte ^ step.keystream_byte, step.result_byte);
+            assert_eq!(step.input_binary().len(), 8);
+            assert_eq!(step.result_binary().len(), 8);
+        }
+    }
 }

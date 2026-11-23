@@ -265,4 +265,81 @@ mod tests {
         let first = &process.steps[0];
         assert_eq!(first.byte_counts.values().sum::<usize>(), 6);
     }
+
+    #[test]
+    fn start_produces_five_steps_with_consistent_totals() {
+        let mut process = EntropyProcess::new();
+        process.start("AAABBC");
+
+        assert_eq!(process.steps.len(), 5);
+        assert_eq!(process.steps[0].step_type, EntropyStepType::CountBytes);
+        assert_eq!(process.steps[4].step_type, EntropyStepType::Interpret);
+        for step in &process.steps {
+            assert_eq!(step.byte_counts.values().sum::<usize>(), 6);
+            assert_eq!(step.max_entropy, 8.0);
+        }
+        assert_eq!(
+            process.steps[4].total_entropy,
+            process.steps[3].current_entropy_sum
+        );
+        assert_eq!(
+            process.steps[4].current_entropy_sum,
+            process.steps[4].total_entropy
+        );
+    }
+
+    #[test]
+    fn navigation_and_empty_input_are_bounded() {
+        let mut process = EntropyProcess::new();
+        process.start("AB");
+
+        process.prev_step();
+        assert_eq!(process.current_step_index, 0);
+        for _ in 0..10 {
+            process.next_step();
+        }
+        assert_eq!(process.current_step_index, 4);
+        assert!(!process.is_playing);
+
+        process.toggle_play();
+        assert!(process.is_playing);
+        process.toggle_play();
+        assert!(!process.is_playing);
+
+        process.start("");
+        assert!(process.steps.is_empty());
+        assert!(process.current_step().is_none());
+        assert_eq!(process.current_step_index, 0);
+    }
+
+    #[test]
+    fn same_input_is_deterministic() {
+        let mut a = EntropyProcess::new();
+        let mut b = EntropyProcess::new();
+        a.start("determinism");
+        b.start("determinism");
+
+        assert_eq!(a.steps.len(), b.steps.len());
+        for (left, right) in a.steps.iter().zip(&b.steps) {
+            assert_eq!(left.step_type, right.step_type);
+            assert_eq!(left.byte_counts, right.byte_counts);
+            // HashMap iteration order can change the addition order of the
+            // per-byte contributions, so compare with a floating tolerance.
+            assert!(
+                (left.current_entropy_sum - right.current_entropy_sum).abs() < 1e-9,
+                "{} vs {}",
+                left.current_entropy_sum,
+                right.current_entropy_sum
+            );
+        }
+    }
+
+    #[test]
+    fn verdict_thresholds_are_strictly_bounded() {
+        assert_eq!(interpret_entropy(1.99), EntropyVerdict::Low);
+        assert_eq!(interpret_entropy(2.0), EntropyVerdict::Moderate);
+        assert_eq!(interpret_entropy(5.99), EntropyVerdict::Moderate);
+        assert_eq!(interpret_entropy(6.0), EntropyVerdict::High);
+        assert_eq!(interpret_entropy(8.0), EntropyVerdict::High);
+    }
 }

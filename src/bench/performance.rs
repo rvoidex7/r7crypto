@@ -48,15 +48,36 @@ impl PerformanceBench {
         source: &mut E,
         total_bytes: usize,
     ) -> BenchmarkResult {
+        if total_bytes == 0 {
+            return BenchmarkResult {
+                throughput_mbps: 0.0,
+                latency_us: 0.0,
+                bytes_generated: 0,
+                duration: Duration::ZERO,
+            };
+        }
+
         let mut buffer = vec![0u8; total_bytes];
 
         let start = Instant::now();
         source.fill_bytes(&mut buffer);
         let duration = start.elapsed();
 
+        // A null measurement must not leak NaN or infinity into the UI.
+        let duration = if duration.is_zero() && total_bytes > 0 {
+            Duration::from_nanos(1)
+        } else {
+            duration
+        };
         let duration_secs = duration.as_secs_f64();
-        let throughput_mbps = (total_bytes as f64 / duration_secs) / 1_000_000.0;
-        let latency_us = (duration_secs * 1_000_000.0) / total_bytes as f64;
+        let (throughput_mbps, latency_us) = if total_bytes == 0 || duration_secs == 0.0 {
+            (0.0, 0.0)
+        } else {
+            (
+                (total_bytes as f64 / duration_secs) / 1_000_000.0,
+                (duration_secs * 1_000_000.0) / total_bytes as f64,
+            )
+        };
 
         BenchmarkResult {
             throughput_mbps,
@@ -111,7 +132,7 @@ impl BenchmarkResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::entropy::SystemEntropy;
+    use crate::entropy::{MockEntropy, SystemEntropy};
 
     #[test]
     fn test_benchmark() {
@@ -130,5 +151,46 @@ mod tests {
 
         assert!(result.throughput_mbps > 0.0);
         assert_eq!(result.bytes_generated, 5_000);
+    }
+
+    #[test]
+    fn seeded_source_produces_finite_repeatable_measurements() {
+        let mut first = MockEntropy::new(7);
+        let mut second = MockEntropy::new(7);
+        let a = PerformanceBench::benchmark(&mut first, 4_096);
+        let b = PerformanceBench::benchmark(&mut second, 4_096);
+
+        assert_eq!(a.bytes_generated, 4_096);
+        assert!(a.throughput_mbps.is_finite() && a.throughput_mbps > 0.0);
+        assert!(a.latency_us.is_finite() && a.latency_us > 0.0);
+        assert_eq!(b.bytes_generated, a.bytes_generated);
+        assert!(b.throughput_mbps.is_finite() && b.throughput_mbps > 0.0);
+    }
+
+    #[test]
+    fn zero_bytes_does_not_produce_nan_or_infinity() {
+        let mut source = MockEntropy::new(1);
+        let result = PerformanceBench::benchmark(&mut source, 0);
+
+        assert_eq!(result.bytes_generated, 0);
+        assert_eq!(result.throughput_mbps, 0.0);
+        assert_eq!(result.latency_us, 0.0);
+        assert!(result.duration.is_zero());
+
+        let avg = PerformanceBench::benchmark_avg(&mut source, 0, 3);
+        assert_eq!(avg.bytes_generated, 0);
+        assert!(avg.throughput_mbps.is_finite());
+        assert!(avg.latency_us.is_finite());
+    }
+
+    #[test]
+    fn formatted_result_contains_every_benchmark_field() {
+        let mut source = MockEntropy::new(3);
+        let result = PerformanceBench::benchmark(&mut source, 100);
+        let text = result.format();
+
+        assert!(text.contains("Throughput:"));
+        assert!(text.contains("Latency:"));
+        assert!(text.contains("Generated: 100 bytes"));
     }
 }

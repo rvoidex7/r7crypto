@@ -165,9 +165,24 @@ mod tests {
     #[test]
     fn cipher_state_is_limited_to_64_bytes() {
         let mut cipher = StreamCipher::new(MockEntropy::new(42));
-        cipher.process(b"Some data");
-        assert!(!cipher.state().is_empty());
-        assert!(cipher.state().len() <= 64);
+        let ciphertext = cipher.process(b"Some data");
+
+        let mut entropy = MockEntropy::new(42);
+        let mut keystream = vec![0u8; 9];
+        entropy.fill_bytes(&mut keystream);
+        assert_eq!(cipher.state(), &keystream);
+        assert_eq!(
+            ciphertext,
+            b"Some data"
+                .iter()
+                .zip(&keystream)
+                .map(|(byte, key)| byte ^ key)
+                .collect::<Vec<_>>()
+        );
+
+        let mut long_cipher = StreamCipher::new(MockEntropy::new(42));
+        long_cipher.process(&[0u8; 100]);
+        assert_eq!(long_cipher.state().len(), 64);
     }
 
     #[test]
@@ -238,6 +253,42 @@ mod tests {
         let c_xor: Vec<u8> = c1.iter().zip(&c2).map(|(a, b)| a ^ b).collect();
         let p_xor: Vec<u8> = p1.iter().zip(p2).map(|(a, b)| a ^ b).collect();
         assert_eq!(c_xor, p_xor);
+    }
+
+    #[test]
+    fn distinct_nonces_do_not_leak_the_plaintext_xor() {
+        // Same key, different nonce: the two-time pad identity must not hold.
+        let key = [0x11u8; 32];
+        let p1 = b"attack at dawn";
+        let p2 = b"defend at dusk";
+
+        let c1 = KeyedStreamCipher::process_chacha20(&key, &[0x22u8; 12], p1);
+        let c2 = KeyedStreamCipher::process_chacha20(&key, &[0x33u8; 12], p2);
+
+        let c_xor: Vec<u8> = c1.iter().zip(&c2).map(|(a, b)| a ^ b).collect();
+        let p_xor: Vec<u8> = p1.iter().zip(p2).map(|(a, b)| a ^ b).collect();
+        assert_ne!(c_xor, p_xor);
+    }
+
+    #[test]
+    fn chacha20_is_malleable_but_not_single_bit_avalanche() {
+        // Stream-cipher malleability applies to ChaCha20 too: flipping one
+        // ciphertext bit flips exactly one plaintext bit.
+        let key = [0x55u8; 32];
+        let nonce = [0x66u8; 12];
+        let plaintext = [0u8; 32];
+        let ciphertext = KeyedStreamCipher::process_chacha20(&key, &nonce, &plaintext);
+
+        let mut tampered = ciphertext.clone();
+        tampered[0] ^= 0b1000_0000;
+        let decrypted = KeyedStreamCipher::process_chacha20(&key, &nonce, &tampered);
+
+        let changed: u32 = plaintext
+            .iter()
+            .zip(&decrypted)
+            .map(|(a, b)| (a ^ b).count_ones())
+            .sum();
+        assert_eq!(changed, 1);
     }
 
     #[test]

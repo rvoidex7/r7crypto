@@ -152,6 +152,122 @@ fn benchmark_button_runs_with_the_selected_source() {
 }
 
 #[test]
+fn bias_slider_value_reaches_the_quality_job() {
+    let mut harness = Harness::builder()
+        .with_size(egui::vec2(800.0, 1200.0))
+        .allow_missing_glyphs()
+        .with_max_steps(20_000)
+        .build_eframe(|_cc| {
+            let mut app = R7CryptoApp::for_tab(Tab::Test);
+            app.select_source(SourceKind::Biased);
+            app.set_sample_size(50_000);
+            app
+        });
+
+    harness.run_steps(2);
+    harness
+        .query_all_by_label("P(1)")
+        .next()
+        .expect("the biased source exposes a P(1) slider")
+        .set_value_accesskit(0.95);
+    harness.run_steps(2);
+    assert!(
+        (harness.state().bias_probability() - 0.95).abs() < 0.01,
+        "the slider must update the app's bias value"
+    );
+
+    harness.get_by_label("🔬 Run All Tests").click();
+    harness.run();
+
+    let metrics = harness
+        .state()
+        .quality_metrics()
+        .expect("biased source should still produce metrics");
+    assert!(
+        metrics.shannon_entropy < 3.0,
+        "P(1)=0.95 should be visibly biased, got {} bits/byte",
+        metrics.shannon_entropy
+    );
+    assert!(metrics.is_capped());
+}
+
+#[test]
+fn sample_size_slider_reaches_the_quality_job() {
+    let mut harness = arena_harness(Tab::Test);
+    harness.run_steps(2);
+    let default_size = harness.state().sample_size();
+
+    harness
+        .query_all_by_label("Sample size:")
+        .next()
+        .expect("the Test tab exposes a sample size slider")
+        .set_value_accesskit(2_000.0);
+    harness.run_steps(2);
+    let selected = harness.state().sample_size();
+    assert!(
+        selected < default_size,
+        "the slider must change the sample size"
+    );
+
+    harness.get_by_label("🔬 Run All Tests").click();
+    harness.run();
+
+    let metrics = harness
+        .state()
+        .quality_metrics()
+        .expect("the Test tab should display metrics after a run");
+    assert_eq!(
+        metrics.total_bytes, selected,
+        "the job must use the sample size chosen in the UI"
+    );
+}
+
+#[test]
+fn nist_results_table_shows_all_nine_named_tests_with_verdicts() {
+    let mut harness = Harness::builder()
+        .with_size(egui::vec2(800.0, 1200.0))
+        .allow_missing_glyphs()
+        .with_max_steps(20_000)
+        .build_eframe(|_cc| {
+            let mut app = R7CryptoApp::for_tab(Tab::Test);
+            app.select_source(SourceKind::ChaCha20);
+            app.set_sample_size(50_000);
+            app
+        });
+
+    harness.run_steps(2);
+    harness.get_by_label("🔬 Run All Tests").click();
+    harness.run();
+
+    assert!(harness
+        .query_by_label_contains("P-values ≥ 0.01 indicate randomness (Pass)")
+        .is_some());
+    for name in [
+        "Frequency Test",
+        "Block Frequency Test",
+        "Runs Test",
+        "Longest Run Test",
+        "Chi-Square Test",
+        "Serial Test (p1)",
+        "Serial Test (p2)",
+        "Cumulative Sums (forward)",
+        "Cumulative Sums (reverse)",
+    ] {
+        assert!(
+            harness.query_by_label(name).is_some(),
+            "the NIST table must name {name}"
+        );
+    }
+    let passes = harness.query_all_by_label_contains("✓ Pass").count();
+    let failures = harness.query_all_by_label_contains("✗ Fail").count();
+    assert_eq!(
+        passes + failures,
+        9,
+        "every NIST row must carry exactly one verdict"
+    );
+}
+
+#[test]
 fn changing_the_source_discards_the_previous_run() {
     let mut harness = Harness::builder()
         .with_size(egui::vec2(800.0, 1200.0))

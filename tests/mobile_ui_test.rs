@@ -30,8 +30,9 @@ fn assert_within_viewport_width(node: &Node<'_>, path: &str, pixels_per_point: f
             let max_x = bounds.x1 as f32 / pixels_per_point;
             assert!(
                 min_x >= -0.5 && max_x <= VIEWPORT_WIDTH + 0.5,
-                "{path}/{index} {role} {label:?} exceeds the {VIEWPORT_WIDTH}px viewport: \
-                 x = {min_x}..{max_x}"
+                "{path}/{index} {role} {label:?} value={:?} exceeds the {VIEWPORT_WIDTH}px viewport: \
+                 x = {min_x}..{max_x}",
+                accesskit_node.value()
             );
         }
 
@@ -132,4 +133,61 @@ fn use_tab_encrypt_then_decrypt_round_trip_through_widgets() {
         .value()
         .expect("plaintext field should expose its value");
     assert_eq!(plaintext, "Hello, World!");
+}
+
+#[test]
+fn mobile_360px_learn_lessons_with_active_steps_do_not_overflow() {
+    for (mode, button) in [
+        ("XOR Cipher", "Start Visualization"),
+        ("Shannon Entropy", "Calculate"),
+        ("NIST Frequency", "Analyze"),
+    ] {
+        let mut harness = Harness::builder()
+            .with_size(egui::vec2(VIEWPORT_WIDTH, 800.0))
+            .allow_missing_glyphs()
+            .with_max_steps(20_000)
+            .build_eframe(|_cc| R7CryptoApp::for_tab(Tab::Learn));
+
+        harness.run_steps(2);
+        harness.get_by_label(mode).click();
+        harness.run_steps(2);
+        harness
+            .get_by_label("Input:")
+            .set_text_value_accesskit("AAABBC");
+        harness.run_steps(2);
+        harness.get_by_label(button).click();
+        harness.run();
+
+        assert!(
+            harness.query_by_label_contains("Step 1 of").is_some(),
+            "{mode} should render its first step at phone width"
+        );
+
+        let root = harness.root();
+        let pixels_per_point = harness.ctx.pixels_per_point();
+        assert_within_viewport_width(&root, mode, pixels_per_point);
+    }
+}
+
+#[test]
+fn mobile_360px_test_results_do_not_overflow() {
+    let mut harness = Harness::builder()
+        .with_size(egui::vec2(VIEWPORT_WIDTH, 800.0))
+        .allow_missing_glyphs()
+        .with_max_steps(20_000)
+        .build_eframe(|_cc| {
+            let mut app = R7CryptoApp::for_tab(Tab::Test);
+            app.select_source(SourceKind::Counter);
+            app.set_sample_size(1_000);
+            app
+        });
+
+    harness.run_steps(2);
+    harness.get_by_label("🔬 Run All Tests").click();
+    harness.run();
+    assert!(harness.state().quality_metrics().is_some());
+
+    let root = harness.root();
+    let pixels_per_point = harness.ctx.pixels_per_point();
+    assert_within_viewport_width(&root, "TestResults", pixels_per_point);
 }

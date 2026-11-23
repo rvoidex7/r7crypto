@@ -138,3 +138,61 @@ fn empty_message_shows_a_hint_instead_of_crashing() {
         .query_by_label_contains("Type a message to analyze")
         .is_some());
 }
+
+#[test]
+fn running_twice_produces_the_same_result() {
+    let mut harness = avalanche_harness();
+    harness.run_steps(2);
+
+    harness.get_by_label("🔀 Run Avalanche").click();
+    harness.run();
+    let first = harness
+        .state()
+        .avalanche_result()
+        .expect("first run")
+        .clone();
+
+    harness.get_by_label("🔀 Run Avalanche").click();
+    harness.run();
+    let second = harness
+        .state()
+        .avalanche_result()
+        .expect("second run")
+        .clone();
+
+    assert_eq!(first, second);
+    assert_eq!(
+        harness.state().avalanche_stats(),
+        Some(&AvalancheAnalyzer::analyze_sha256(
+            DEFAULT_MESSAGE.as_bytes()
+        ))
+    );
+}
+
+#[test]
+fn shortening_the_message_clamps_the_selected_bit_and_drops_stale_results() {
+    let mut harness = avalanche_harness();
+    harness.run_steps(2);
+
+    harness.get_by_role(Role::Slider).set_value_accesskit(40.0);
+    harness.run();
+    harness.get_by_label("🔀 Run Avalanche").click();
+    harness.run();
+    assert!(harness.state().avalanche_result().is_some());
+
+    harness
+        .get_by_role(Role::TextInput)
+        .set_text_value_accesskit("A");
+    harness.run();
+
+    assert_eq!(
+        harness.state().avalanche_bit(),
+        7,
+        "a one-byte message has eight bits, so bit 40 must clamp to the last bit"
+    );
+    assert!(
+        harness.state().avalanche_result().is_none(),
+        "a result for bit 40 must not survive a one-byte message"
+    );
+    assert!(harness.state().avalanche_stats().is_none());
+}

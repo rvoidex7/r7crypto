@@ -196,3 +196,97 @@ impl NistProcess {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn start_produces_five_ordered_steps() {
+        let mut process = NistProcess::new();
+        process.start("Hi");
+
+        assert_eq!(process.steps.len(), 5);
+        let types: Vec<_> = process.steps.iter().map(|step| &step.step_type).collect();
+        assert_eq!(
+            types,
+            vec![
+                &NistStepType::ConvertToBits,
+                &NistStepType::CountOnesZeros,
+                &NistStepType::CalculateStatistic,
+                &NistStepType::CalculatePValue,
+                &NistStepType::Interpret,
+            ]
+        );
+        for step in &process.steps {
+            assert_eq!(step.bits.len(), 16, "two UTF-8 bytes are eight bits each");
+        }
+    }
+
+    #[test]
+    fn final_step_matches_the_frequency_statistic_and_p_value() {
+        let text = "A"; // 0x41 => 01000001
+        let mut process = NistProcess::new();
+        process.start(text);
+
+        let bits = bytes_to_bits_msb(text.as_bytes());
+        let ones = bits.iter().filter(|&&bit| bit == 1).count();
+        let zeros = bits.len() - ones;
+        let sum = ones as i64 - zeros as i64;
+        let s_obs = (sum as f64).abs() / (bits.len() as f64).sqrt();
+        let p_value = NistTests::erfc(s_obs / std::f64::consts::SQRT_2);
+
+        let final_step = process.steps.last().unwrap();
+        assert_eq!(final_step.ones_count, 2);
+        assert_eq!(final_step.zeros_count, 6);
+        assert_eq!(final_step.sum, -4);
+        assert!((final_step.s_obs - s_obs).abs() < 1e-12);
+        assert!((final_step.p_value - p_value).abs() < 1e-12);
+        assert_eq!(final_step.passed, p_value >= 0.01);
+    }
+
+    #[test]
+    fn navigation_and_empty_input_are_bounded() {
+        let mut process = NistProcess::new();
+        process.start("AB");
+        assert_eq!(process.current_step_index, 0);
+
+        process.prev_step();
+        assert_eq!(process.current_step_index, 0, "prev must not underflow");
+
+        process.next_step();
+        process.next_step();
+        process.next_step();
+        process.next_step();
+        assert_eq!(process.current_step_index, 4);
+        process.next_step();
+        assert_eq!(process.current_step_index, 4, "next must not overflow");
+        assert!(!process.is_playing, "reaching the end stops playback");
+
+        process.toggle_play();
+        assert!(process.is_playing);
+        process.toggle_play();
+        assert!(!process.is_playing);
+
+        process.start("");
+        assert!(process.steps.is_empty());
+        assert!(process.current_step().is_none());
+        assert_eq!(process.current_step_index, 0);
+    }
+
+    #[test]
+    fn same_input_produces_the_same_walkthrough() {
+        let mut a = NistProcess::new();
+        let mut b = NistProcess::new();
+        a.start("deterministic");
+        b.start("deterministic");
+
+        assert_eq!(a.steps.len(), b.steps.len());
+        for (left, right) in a.steps.iter().zip(&b.steps) {
+            assert_eq!(left.step_type, right.step_type);
+            assert_eq!(left.bits, right.bits);
+            assert_eq!(left.ones_count, right.ones_count);
+            assert_eq!(left.p_value, right.p_value);
+        }
+    }
+}

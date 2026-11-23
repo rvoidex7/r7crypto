@@ -1285,7 +1285,7 @@ impl R7CryptoApp {
 
             ui.add_space(20.0);
 
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 if ui.button("⬅ Previous").clicked() {
                     self.learn_process.prev_step();
                 }
@@ -1303,9 +1303,21 @@ impl R7CryptoApp {
                     self.learn_process.next_step();
                 }
 
-                ui.add_space(20.0);
-                ui.label("Speed:");
-                ui.add(egui::Slider::new(&mut self.learn_process.speed, 0.1..=5.0).text("steps/s"));
+                ui.add_space(10.0);
+                ui.allocate_ui_with_layout(
+                    egui::vec2(120.0, 0.0),
+                    egui::Layout::top_down(egui::Align::LEFT),
+                    |ui| {
+                        let speed_label = ui.label("Speed (steps/s):");
+                        let previous_slider_width = ui.spacing().slider_width;
+                        ui.spacing_mut().slider_width = 60.0;
+                        ui.add(
+                            egui::Slider::new(&mut self.learn_process.speed, 0.1..=5.0).text(""),
+                        )
+                        .labelled_by(speed_label.id);
+                        ui.spacing_mut().slider_width = previous_slider_width;
+                    },
+                );
             });
 
             ui.add_space(20.0);
@@ -1365,10 +1377,13 @@ impl R7CryptoApp {
         ui.label("Measures the unpredictability of the UTF-8 bytes in the input.");
         ui.add_space(10.0);
 
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
             let label = ui.label("Input:");
-            ui.text_edit_singleline(&mut self.entropy_process.input)
-                .labelled_by(label.id);
+            ui.add(
+                egui::TextEdit::singleline(&mut self.entropy_process.input)
+                    .desired_width((ui.available_width() - 160.0).max(120.0)),
+            )
+            .labelled_by(label.id);
             if ui.button("Calculate").clicked() {
                 let input = self.entropy_process.input.clone();
                 self.entropy_process.start(&input);
@@ -1548,7 +1563,7 @@ impl R7CryptoApp {
 
             ui.add_space(20.0);
 
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 if ui.button("⬅ Previous").clicked() {
                     self.entropy_process.prev_step();
                 }
@@ -1566,10 +1581,20 @@ impl R7CryptoApp {
                     self.entropy_process.next_step();
                 }
 
-                ui.add_space(20.0);
-                ui.label("Speed:");
-                ui.add(
-                    egui::Slider::new(&mut self.entropy_process.speed, 0.1..=5.0).text("steps/s"),
+                ui.add_space(10.0);
+                ui.allocate_ui_with_layout(
+                    egui::vec2(120.0, 0.0),
+                    egui::Layout::top_down(egui::Align::LEFT),
+                    |ui| {
+                        let speed_label = ui.label("Speed (steps/s):");
+                        let previous_slider_width = ui.spacing().slider_width;
+                        ui.spacing_mut().slider_width = 60.0;
+                        ui.add(
+                            egui::Slider::new(&mut self.entropy_process.speed, 0.1..=5.0).text(""),
+                        )
+                        .labelled_by(speed_label.id);
+                        ui.spacing_mut().slider_width = previous_slider_width;
+                    },
                 );
             });
         } else {
@@ -1590,10 +1615,13 @@ impl R7CryptoApp {
         ui.label("Checks whether the number of 1s and 0s is approximately equal.");
         ui.add_space(10.0);
 
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
             let label = ui.label("Input:");
-            ui.text_edit_singleline(&mut self.nist_process.input_text)
-                .labelled_by(label.id);
+            ui.add(
+                egui::TextEdit::singleline(&mut self.nist_process.input_text)
+                    .desired_width((ui.available_width() - 230.0).max(100.0)),
+            )
+            .labelled_by(label.id);
             if ui.button("Analyze").clicked() {
                 let input = self.nist_process.input_text.clone();
                 self.nist_process.start(&input);
@@ -1743,7 +1771,7 @@ impl R7CryptoApp {
 
             ui.add_space(20.0);
 
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 if ui.button("⬅ Previous").clicked() {
                     self.nist_process.prev_step();
                 }
@@ -1761,9 +1789,19 @@ impl R7CryptoApp {
                     self.nist_process.next_step();
                 }
 
-                ui.add_space(20.0);
-                ui.label("Speed:");
-                ui.add(egui::Slider::new(&mut self.nist_process.speed, 0.1..=5.0).text("steps/s"));
+                ui.add_space(30.0);
+                ui.allocate_ui_with_layout(
+                    egui::vec2(120.0, 0.0),
+                    egui::Layout::top_down(egui::Align::LEFT),
+                    |ui| {
+                        let speed_label = ui.label("Speed (steps/s):");
+                        let previous_slider_width = ui.spacing().slider_width;
+                        ui.spacing_mut().slider_width = 60.0;
+                        ui.add(egui::Slider::new(&mut self.nist_process.speed, 0.1..=5.0).text(""))
+                            .labelled_by(speed_label.id);
+                        ui.spacing_mut().slider_width = previous_slider_width;
+                    },
+                );
             });
         } else {
             ui.label("Enter text or generate random bytes to start.");
@@ -2048,5 +2086,61 @@ mod tests {
 
         assert!(!app.is_testing());
         assert_eq!(app.test_error(), Some("synthetic failure"));
+    }
+
+    #[test]
+    fn in_flight_jobs_and_failures_are_visible_in_the_ui() {
+        use egui_kittest::kittest::Queryable;
+        use egui_kittest::Harness;
+
+        let app = R7CryptoApp {
+            current_tab: Tab::Test,
+            is_testing: true,
+            test_error: Some("synthetic test failure".to_string()),
+            ..R7CryptoApp::default()
+        };
+        let mut harness = Harness::builder()
+            .with_size(egui::vec2(800.0, 1200.0))
+            .allow_missing_glyphs()
+            .build_eframe(|_cc| app);
+        harness.run_steps(2);
+
+        assert!(
+            harness
+                .query_by_label_contains("Testing in background...")
+                .is_some(),
+            "the Test tab must show a spinner label while a job is running"
+        );
+        assert!(
+            harness
+                .query_by_label_contains("synthetic test failure")
+                .is_some(),
+            "job failures must be visible, not only stored in state"
+        );
+
+        let app = R7CryptoApp {
+            current_tab: Tab::Benchmark,
+            is_benchmarking: true,
+            bench_error: Some("synthetic benchmark failure".to_string()),
+            ..R7CryptoApp::default()
+        };
+        let mut harness = Harness::builder()
+            .with_size(egui::vec2(800.0, 1200.0))
+            .allow_missing_glyphs()
+            .build_eframe(|_cc| app);
+        harness.run_steps(2);
+
+        assert!(
+            harness
+                .query_by_label_contains("Benchmarking in background...")
+                .is_some(),
+            "the Benchmark tab must show a spinner label while a job is running"
+        );
+        assert!(
+            harness
+                .query_by_label_contains("synthetic benchmark failure")
+                .is_some(),
+            "benchmark failures must be visible in the UI"
+        );
     }
 }
