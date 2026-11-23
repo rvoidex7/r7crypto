@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   never blocks. Benchmark timing counts only active generation time.
 
 ### Changed
+- Removed the placeholder "Screenshots" section from the README; no screenshots
+  exist, so it only advertised the web app under a misleading heading.
 - Test and Benchmark jobs now use the same incremental pipeline. NIST tests run
   one per step and metrics reuse those results instead of recomputing the suite.
 - `SourceKind::build` returns `Box<dyn EntropySource + Send>` so seeded sources

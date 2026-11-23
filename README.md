@@ -25,13 +25,6 @@ with quality testing, visualization and **interactive educational tools**.
 - **🎓 Interactive Learning**: Step-by-step visualizations of cryptographic operations
 - **🌐 One codebase**: Native Linux/Windows binary and browser/WASM build from the same commit
 
-## Screenshots
-
-Screenshots are being refreshed for the current tab set. Until then, try the
-[web app](https://rvoidex7.github.io/r7crypto/) or run the native GUI locally —
-both render the same egui interface and expose the same workbench, not a reduced
-demo.
-
 ## Quick Start
 
 ### Try it in the browser
