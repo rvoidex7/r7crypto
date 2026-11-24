@@ -95,6 +95,40 @@ jobs:
           CLIPPY_CONF_DIR: ci/wasm-clippy
         run: cargo clippy --lib --target wasm32-unknown-unknown --no-default-features --features gui --locked -- -D warnings -D clippy::disallowed_methods
 
+  browser-smoke:
+    name: Browser smoke (WASM)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Cache cargo and target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Trunk
+        uses: taiki-e/install-action@trunk
+
+      # Compilation and linting cannot prove that wasm-bindgen init, WebGL and
+      # the frame loop actually boot in a browser.
+      - name: Build web app
+        run: trunk build --release
+
+      - name: Verify the smoke detector catches an injected error
+        run: node scripts/wasm-smoke.mjs --self-test
+
+      - name: Open the page in headless Chromium
+        run: node scripts/wasm-smoke.mjs
+
   windows:
     name: Check (Windows)
     runs-on: windows-latest
@@ -115,7 +149,7 @@ jobs:
     name: Deploy web app
     # Publish only after every check passes on a push to main. Pull requests
     # still run all checks, but never deploy.
-    needs: [test, lint, wasm, windows]
+    needs: [test, lint, wasm, browser-smoke, windows]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30

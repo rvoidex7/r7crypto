@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A final `deploy` job in `.github/workflows/ci.yml` builds with
   `trunk build --release` and publishes `dist/` through the official GitHub
   Pages actions. It runs only on pushes to `main` and only after test, lint,
-  wasm and Windows checks pass; generated site files are never committed.
+  wasm, browser-smoke and Windows checks pass; generated site files are never
+  committed.
 - A wasm type-check job in CI
   (`cargo check --lib --bins --target wasm32-unknown-unknown --all-features --locked`).
 - `src/viz/job.rs`: shared incremental jobs for native and web. Native runs them
@@ -38,6 +39,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bounded completion tests for every entropy source and both job types, boundary
   sample sizes, a self-check that the bounded helper detects a hanging job, and
   UI tests asserting that the Test/Benchmark spinners clear within a poll limit.
+- `scripts/wasm-smoke.mjs`: a zero-dependency browser runtime smoke test. It
+  serves the Trunk build locally, opens it in headless Chromium over CDP, and
+  fails on console errors, uncaught exceptions, a missing/unsized canvas or an
+  unexpected title. CI runs it in its own `browser-smoke` job, and `deploy`
+  waits for it. This covers wasm-bindgen init, WebGL and frame-loop failures
+  that compilation and native tests cannot see. The script has a `--self-test`
+  mode that injects a known console error to prove the detector is attached.
 
 ### Changed
 - Removed the placeholder "Screenshots" section from the README; no screenshots

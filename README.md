@@ -58,10 +58,13 @@ Run the same checks as CI locally:
 ./scripts/check.sh
 ```
 
-It covers formatting, Clippy, tests, the feature matrix, wasm type-checks and a
-wasm-only lint that rejects host-only APIs such as `std::time::Instant::now`.
-Those calls compile for wasm32 but panic in the browser, so native tests alone
-cannot catch them.
+It covers formatting, Clippy, tests, the feature matrix, wasm type-checks, a
+headless Chromium smoke test of the built web app, and a wasm-only lint that
+rejects host-only APIs such as `std::time::Instant::now`. Those calls compile for
+wasm32 but panic in the browser, so native tests alone cannot catch them.
+
+The smoke test needs Node 22+ and a Chromium binary; set `CHROME_BIN` if it is
+not in a standard location.
 
 ### Prebuilt binaries
 

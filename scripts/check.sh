@@ -24,6 +24,11 @@ echo "== wasm type-check =="
 cargo check --lib --bins --target wasm32-unknown-unknown --all-features --locked
 cargo check --lib --target wasm32-unknown-unknown --no-default-features --features gui --locked
 
+echo "== browser runtime smoke (Trunk build) =="
+node scripts/wasm-smoke.mjs --self-test
+trunk build --release
+node scripts/wasm-smoke.mjs
+
 echo "== wasm host-only API guard =="
 CLIPPY_CONF_DIR=ci/wasm-clippy \
   cargo clippy --lib --target wasm32-unknown-unknown --no-default-features --features gui --locked -- -D warnings -D clippy::disallowed_methods
