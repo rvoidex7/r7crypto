@@ -1,44 +1,28 @@
 # Security Policy
 
-## Supported Versions
+GitHub uses `SECURITY.md` to surface a private **Report a vulnerability** entry in the Security tab and to tell reporters which versions are maintained. That is why this file stays in the repository; design and dependency rationale live in the [project notes](https://rvoidex7.github.io/r7notes/Projects/r7crypto).
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
+## Supported versions
 
-## Reporting a Vulnerability
+| Version | Status |
+|---|---|
+| 0.4.x | Maintained |
+| older | Not maintained |
 
-If you discover a security vulnerability, please report it by:
+Release assets and notes are on the [releases page](https://github.com/rvoidex7/r7crypto/releases).
 
-1. **DO NOT** create a public GitHub issue
-2. Email the maintainers directly (or use GitHub's private vulnerability reporting)
-3. Include detailed steps to reproduce the issue
-4. Allow reasonable time for a fix before public disclosure
+## Reporting a vulnerability
 
-## Security Considerations
+Use the repository's **Security → Report a vulnerability** link (private GitHub security advisory). If that option is not available, open a draft security advisory or contact the maintainer through the channels on the [Connect page](https://rvoidex7.github.io/r7notes/Connect).
 
-### Educational Tool Disclaimer
+Please do not open a public issue before a fix is available. Include the affected version, reproduction steps and impact, and allow reasonable time for a fix before public disclosure.
 
-r7 Crypto Lab is primarily an **educational tool** for understanding cryptographic concepts.
+## Scope
 
-**DO NOT use this software for:**
-- Production cryptographic applications
-- Protecting sensitive data
-- Any security-critical systems
+The ChaCha20 path uses RustCrypto's RFC 8439 implementation. The XOR one-time-pad view is a teaching toy, not a cipher. Implementation details and test coverage are documented in the [Architecture notes](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Architecture).
 
-### Cryptographic Implementations
+Known RUSTSEC advisories on transitive dependencies are **unmaintained, not vulnerable** reports; each has its own tracking issue linked from the [Dependencies notes](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Dependencies).
 
-The cryptographic implementations in this project (e.g., XOR stream cipher) are simplified for educational purposes and are **NOT cryptographically secure** for real-world use.
+## Dependency monitoring
 
-For production cryptography, use well-audited libraries such as:
-- [RustCrypto](https://github.com/RustCrypto)
-- [ring](https://github.com/briansmith/ring)
-- [sodiumoxide](https://github.com/sodiumoxide/sodiumoxide)
-
-## Dependencies
-
-We use Dependabot to automatically monitor and update dependencies for security vulnerabilities.
-
-## Acknowledgments
-
-We appreciate responsible disclosure of security issues.
+Dependabot monitors dependency updates and `cargo audit` runs weekly via `audit.yml`, filing an issue per advisory.

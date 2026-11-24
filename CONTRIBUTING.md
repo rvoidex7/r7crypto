@@ -1,127 +1,76 @@
 # Contributing to r7 Crypto Lab
 
-Thank you for your interest in contributing to r7 Crypto Lab! This document provides guidelines and instructions for contributing.
+Thanks for your interest in contributing. This file covers the repository workflow. The engineering notes — architecture, dependencies, build/CI, roadmap — are in [r7notes / r7crypto](https://rvoidex7.github.io/r7notes/Projects/r7crypto).
 
 ## Code of Conduct
 
-Please be respectful and constructive in all interactions. We welcome contributors of all backgrounds and experience levels.
+Please be respectful and constructive in all interactions. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
-## How to Contribute
+## How to contribute
 
-### Reporting Bugs
+### Reporting bugs
 
-1. Check if the bug has already been reported in [Issues](https://github.com/rvoidex7/r7crypto/issues)
-2. If not, create a new issue using the Bug Report template
-3. Include as much detail as possible
+1. Check [Issues](https://github.com/rvoidex7/r7crypto/issues) for an existing report.
+2. Open a new issue with the [Bug Report template](.github/ISSUE_TEMPLATE/bug_report.md) and include reproduction steps, platform and version.
 
-### Suggesting Features
+### Suggesting features
 
-1. Check existing issues for similar suggestions
-2. Create a new issue using the Feature Request template
-3. Describe the use case and potential implementation
+1. Check existing issues for a similar suggestion.
+2. Open one with the [Feature Request template](.github/ISSUE_TEMPLATE/feature_request.md), describing the use case first and the implementation second. A feature that only adds information belongs in the notes, not in the app.
 
-### Submitting Code
+### Submitting code
 
-1. **Fork** the repository
-2. **Clone** your fork locally
-3. **Create a branch** for your changes:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-4. **Make your changes** following the code style guidelines
-5. **Test your changes**:
-   ```bash
-   cargo test
-   cargo clippy
-   cargo fmt --check
-   ```
-6. **Commit** with clear, descriptive messages
-7. **Push** to your fork
-8. **Open a Pull Request**
+1. Fork the repository and clone your fork.
+2. Create a branch: `git checkout -b feature/your-feature-name`.
+3. Make your changes following the style notes below.
+4. Run the full local gate: `./scripts/check.sh`.
+5. Commit with a clear message, push to your fork and open a Pull Request.
 
-## Development Setup
+CI is authoritative; the script is the local mirror. The wasm-only host-only-API guard is currently red by design on `Instant::now` — see the [Roadmap](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Roadmap). Do not silence it silently in a feature PR.
 
-### Prerequisites
+## Development setup
 
-- Rust 1.70+ (install via [rustup](https://rustup.rs/))
-- Git
-
-### Building
+Rust stable (edition 2021) and Git are enough for the native app. Web work additionally needs the `wasm32-unknown-unknown` target, `trunk`, Node 22+ and a Chromium binary (`CHROME_BIN` if it is not in a standard location).
 
 ```bash
 git clone https://github.com/rvoidex7/r7crypto.git
 cd r7crypto
-cargo build
-```
-
-### Running Tests
-
-```bash
-cargo test
-```
-
-### Running the Application
-
-```bash
 cargo run --release
+./scripts/check.sh
 ```
 
-## Code Style Guidelines
+## Code style
 
-### Rust Style
+- `cargo fmt --all -- --check` and `cargo clippy --all-targets --all-features --locked -- -D warnings`; `./scripts/check.sh` runs both.
+- Write documentation comments for public APIs.
+- Every new feature gets its own tests covering input, button, output format, error state and determinism; UI changes also get a headless 360×800 render check and a human UX review. See [Architecture](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Architecture).
+- New crates are added with the feature that needs them, not before — see [Dependencies](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Dependencies).
 
-- Follow the official [Rust Style Guide](https://doc.rust-lang.org/style-guide/)
-- Use `cargo fmt` before committing
-- Ensure `cargo clippy` passes without warnings
-- Write documentation comments for public APIs
+Commit messages use imperative present tense and a first line under 72 characters, for example `feat: add step-by-step XOR visualization` or `fix: correct entropy calculation for edge cases`.
 
-### Commit Messages
+## Project structure
 
-- Use present tense ("Add feature" not "Added feature")
-- Use imperative mood ("Move cursor to..." not "Moves cursor to...")
-- Limit the first line to 72 characters
-- Reference issues when applicable
-
-**Examples:**
-```
-feat: add step-by-step XOR visualization
-fix: correct entropy calculation for edge cases
-docs: update README with new screenshots
-refactor: simplify cipher state management
-```
-
-### Code Organization
-
-- Keep functions small and focused
-- Add comments for complex logic
-- Write tests for new functionality
-- Update documentation as needed
-
-## Project Structure
-
-```
+```text
 r7crypto/
 ├── src/
-│   ├── entropy/     # Entropy source trait and implementations
-│   ├── crypto/      # Cryptographic operations
-│   ├── quality/     # Quality metrics and NIST tests
-│   ├── bench/       # Performance benchmarking
-│   ├── learn/       # Educational visualizations
-│   └── viz/         # GUI components
-├── examples/        # Usage examples
-└── tests/           # Integration tests
+│   ├── entropy/     EntropySource trait and implementations
+│   ├── crypto/      Cryptographic operations
+│   ├── quality/     Quality metrics and NIST tests
+│   ├── bench/       Performance benchmarking
+│   ├── learn/       Teaching models
+│   ├── viz/         GUI components and jobs
+│   └── web.rs       WASM bootstrap
+├── index.html       Trunk page for the web build
+├── Trunk.toml       Web build configuration
+├── examples/        Runnable API examples
+├── scripts/         Local gate and browser smoke test
+└── tests/           Integration and headless UI tests
 ```
 
-## Getting Help
+## Getting help
 
-- Open an issue for questions
-- Check existing documentation
-- Look at existing code for examples
+Open an issue for questions, check the [project notes](https://rvoidex7.github.io/r7notes/Projects/r7crypto), or look at the existing code and examples.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
-
----
-
-Thank you for contributing! 🦀
+By contributing, you agree that your contributions are licensed under the GNU General Public License v3.0 (see [LICENSE](LICENSE)).

@@ -6,12 +6,12 @@
 
 <p align="center"><em>Learn · Try · Verify · Make it visible</em></p>
 
+<p align="center"><img src="https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white" alt="Rust"> <img src="https://img.shields.io/github/license/rvoidex7/r7crypto?style=for-the-badge" alt="License"> <img src="https://github.com/rvoidex7/r7crypto/actions/workflows/ci.yml/badge.svg?style=for-the-badge" alt="CI"></p>
+
 An interactive cryptography workbench built on a pluggable entropy framework,
 with quality testing, visualization and **interactive educational tools**.
 
-![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)
-![CI](https://github.com/rvoidex7/r7crypto/workflows/CI/badge.svg)
+**Documentation:** architecture, design decisions, dependencies, build/CI and roadmap are in [r7notes / r7crypto](https://rvoidex7.github.io/r7notes/Projects/r7crypto).
 
 ## Features
 
@@ -29,78 +29,23 @@ with quality testing, visualization and **interactive educational tools**.
 
 ### Try it in the browser
 
-The web app is deployed from `main` with GitHub Pages at
-<https://rvoidex7.github.io/r7crypto/>, but only after the full CI gate passes.
-No installation is needed. In the browser, the **System** source uses the Web
-Crypto API (`crypto.getRandomValues()`) through `getrandom/js`.
+Open <https://rvoidex7.github.io/r7crypto/> — no installation needed.
 
-To build it locally:
+### Download a desktop binary
 
-```bash
-cargo install trunk
-trunk serve
-```
+Every release has Linux (`.tar.gz`) and Windows (`.zip`) builds on the
+[releases page](https://github.com/rvoidex7/r7crypto/releases). Unzip and run
+`r7crypto` / `r7crypto.exe`; no Rust toolchain is needed. Android builds will
+appear here when that platform ships.
 
-`trunk build --release` writes the static site to `dist/`. The output directory
-is gitignored; CI publishes it, not the repository.
-
-### Run the GUI
+### Build from source
 
 ```bash
 cargo run --release
 ```
 
-### Quality gate
-
-Run the same checks as CI locally:
-
-```bash
-./scripts/check.sh
-```
-
-It covers formatting, Clippy, tests, the feature matrix, wasm type-checks, a
-headless Chromium smoke test of the built web app, and a wasm-only lint that
-rejects host-only APIs such as `std::time::Instant::now`. Those calls compile for
-wasm32 but panic in the browser, so native tests alone cannot catch them.
-
-The smoke test needs Node 22+ and a Chromium binary; set `CHROME_BIN` if it is
-not in a standard location.
-
-### Prebuilt binaries
-
-Every release has Linux and Windows builds on the
-[releases page](https://github.com/rvoidex7/r7crypto/releases).
-On Windows, unzip the archive and run `r7crypto.exe`; release builds do not
-open a console window. macOS builds are not published yet.
-
-The Linux archive contains the binary, a `.desktop` entry and a 256x256 icon.
-Installing all three makes the app appear in the menu with its icon, including on
-Wayland panels, which look the icon up through the `.desktop` file:
-
-```bash
-tar -xzf r7crypto-<version>-linux-x86_64.tar.gz
-cd r7crypto-<version>-linux-x86_64
-install -Dm755 r7crypto ~/.local/bin/r7crypto
-install -Dm644 r7crypto.desktop \
-  ~/.local/share/applications/r7crypto.desktop
-install -Dm644 icons/hicolor/256x256/apps/r7crypto.png \
-  ~/.local/share/icons/hicolor/256x256/apps/r7crypto.png
-```
-
-`~/.local/bin` must be in `PATH` for the menu entry to launch the app.
-
-### Run Examples
-
-```bash
-# Basic usage
-cargo run --example basic_usage
-
-# Custom entropy source
-cargo run --example custom_source
-
-# Quality check with NIST tests
-cargo run --example quality_check
-```
+Local web builds and the full quality gate (`./scripts/check.sh`) are documented in
+[Build and Release](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Build-and-Release).
 
 ## GUI Tabs
 
@@ -108,11 +53,16 @@ The header selects the active entropy source (RNG Arena) and, when supported,
 its `P(1)` bias. The Test and Benchmark tabs use that selection.
 
 ### 📝 Use Tab
+
 Encrypt and decrypt UTF-8 text with ChaCha20 (256-bit key, 96-bit nonce). The
 passphrase is hashed with SHA-256 and the nonce can be regenerated at any time.
 Encryption and decryption are exact inverses for the same key and nonce.
+The XOR one-time-pad view is a teaching toy that draws fresh keystream; it is
+not a substitute for ChaCha20. The code and its tests are public — inspect them
+and decide for yourself.
 
 ### 🔬 Test Tab
+
 Analyze entropy quality with:
 - Shannon Entropy (bits/byte)
 - Min-Entropy (NIST SP 800-90B MCV, 99% upper confidence bound)
@@ -122,6 +72,7 @@ Analyze entropy quality with:
   Longest Run, Serial, Cumulative Sums)
 
 ### ⚡ Benchmark Tab
+
 Measure entropy source performance:
 - Throughput (MB/s)
 - Latency per byte (µs)
@@ -130,138 +81,20 @@ These numbers describe source generation only, not cryptographic operation
 speed. Operation benchmarks are planned separately.
 
 ### 🎓 Learn Tab
-**Interactive educational visualizations** that teach cryptographic concepts step-by-step:
 
-- **XOR Cipher Visualization**: See exactly how each character is encrypted
+Step-by-step visualizations of cryptographic operations:
+
+- **XOR Cipher Visualization**: see each character encrypted bit by bit
   - Character → ASCII → Binary conversion
-  - Bit-by-bit XOR operation with color coding
-  - Keystream generation from entropy source
-  - Navigation controls (Previous/Next/Play/Pause)
-  - Adjustable animation speed
-
-Perfect for understanding how stream ciphers actually work!
+  - Bit-by-bit XOR with colour coding
+  - Keystream from the selected entropy source
+  - Previous / Next / Play / Pause and adjustable speed
 
 ### 🔀 Avalanche Tab
+
 Flip one input bit of a SHA-256 message and inspect which of the 256 output bits
 changed. The grid is a deterministic teaching aid; the full distribution and
 weak-function comparison are still being expanded.
-
-## Usage
-
-### Using the Default Source
-
-```rust
-use r7crypto::entropy::SystemEntropy;
-use r7crypto::crypto::KeyedStreamCipher;
-
-let key = KeyedStreamCipher::derive_key("correct horse battery staple");
-let nonce = [0x24u8; 12];
-
-let plaintext = "Merhaba dünya! 🔐".as_bytes();
-let ciphertext = KeyedStreamCipher::process_chacha20(&key, &nonce, plaintext);
-let decrypted = KeyedStreamCipher::process_chacha20(&key, &nonce, &ciphertext);
-assert_eq!(decrypted, plaintext);
-```
-
-The educational one-time pad is still available as
-`StreamCipher::new(SystemEntropy::new())`. It draws a fresh keystream from the
-entropy source and is **not** a substitute for ChaCha20.
-
-### Implementing a Custom Source
-
-```rust
-use r7crypto::entropy::EntropySource;
-
-struct MyRNG {
-    state: u64,
-}
-
-impl EntropySource for MyRNG {
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        // Your RNG implementation here
-        for byte in dest.iter_mut() {
-            self.state = self.state.wrapping_mul(1103515245).wrapping_add(12345);
-            *byte = (self.state >> 24) as u8;
-        }
-    }
-    
-    fn name(&self) -> &str {
-        "My Custom RNG"
-    }
-}
-```
-
-### Testing Entropy Quality
-
-```rust
-use r7crypto::quality::QualityMetrics;
-use r7crypto::entropy::SystemEntropy;
-
-let mut source = SystemEntropy::new();
-let metrics = QualityMetrics::analyze(&mut source, 100_000);
-
-println!("Shannon Entropy: {:.4} bits/byte", metrics.shannon_entropy);
-println!("Min-Entropy: {:.4} bits/byte", metrics.min_entropy);
-println!("Quality Score: {:.1}/100", metrics.overall_score());
-```
-
-### Running NIST Tests
-
-```rust
-use r7crypto::quality::NistTests;
-use r7crypto::entropy::{EntropySource, SystemEntropy};
-
-let mut source = SystemEntropy::new();
-let mut data = vec![0u8; 100_000];
-source.fill_bytes(&mut data);
-
-let results = NistTests::run_all_tests(&data);
-for (name, p_value) in results {
-    println!("{}: {:.4} {}", 
-        name, 
-        p_value, 
-        if p_value >= 0.01 { "✓" } else { "✗" }
-    );
-}
-```
-
-## Design Philosophy
-
-r7 Crypto Lab is designed to work with **any** entropy source through a clean trait interface. Whether you're using:
-
-- System RNG (`/dev/urandom`, `BCryptGenRandom`, etc.)
-- Hardware RNG (TPM, RDRAND, etc.)
-- Chaotic systems (Lorenz, Rössler attractors, etc.)
-- Quantum sources
-- Custom implementations
-
-The framework provides:
-
-1. **Practical cryptographic use** (stream ciphers, key derivation)
-2. **Quality verification** (statistical tests, entropy metrics)
-3. **Performance measurement** (throughput, latency benchmarks)
-4. **Visual feedback** (real-time GUI, state visualization)
-5. **Educational tools** (step-by-step algorithm breakdowns)
-
-**High-quality entropy sources** (7.5+ bits/byte min-entropy) will show optimal performance across all metrics.
-
-## Architecture
-
-```
-r7crypto/
-├── src/
-│   ├── entropy/      # EntropySource trait + implementations
-│   ├── crypto/       # Stream cipher, key derivation
-│   ├── quality/      # Metrics, NIST tests
-│   ├── bench/        # Performance benchmarking
-│   ├── learn/        # Educational visualizations
-│   ├── viz/          # GUI components (egui) + jobs
-│   └── web.rs        # WASM bootstrap (Trunk entry point)
-├── index.html        # Canvas page for the web build
-├── Trunk.toml        # Web build configuration
-├── examples/         # Usage examples
-└── tests/            # Integration tests
-```
 
 ## Quality Metrics
 
@@ -277,65 +110,19 @@ The framework measures:
   - Serial Test
   - Chi-Square Test
 
-## Performance
-
-Typical results on modern hardware (example with System RNG):
-
-- **Throughput**: 300-500 MB/s
-- **Latency**: 2-3 µs per byte
-- **Quality**: 7.98+ bits/byte Shannon entropy
-
-## Examples in the Wild
-
-### Use Case: Chaotic System RNG
-
-High-quality chaotic systems (e.g., Rössler attractors) producing 7.5+ bits/byte entropy can be seamlessly integrated:
-
-```rust
-// Hypothetical example
-struct ChaoticRNG {
-    // Rössler system state...
-}
-
-impl EntropySource for ChaoticRNG {
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        // Evolve chaotic system, extract bytes...
-    }
-    
-    fn name(&self) -> &str {
-        "Chaotic RNG (Rössler)"
-    }
-}
-
-// Use with r7 Crypto Lab
-let mut source = ChaoticRNG::new();
-let metrics = QualityMetrics::analyze(&mut source, 1_000_000);
-// Expect: ~7.75 bits/byte, excellent NIST scores
-
-// Feed the chaotic bytes into a real cipher as key material.
-let mut key = [0u8; 32];
-source.fill_bytes(&mut key);
-let nonce = KeyedStreamCipher::random_nonce();
-let ciphertext = KeyedStreamCipher::process_chacha20(&key, &nonce, plaintext);
-```
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 — see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
 - NIST SP 800-22 for statistical test specifications
 - The Rust community for excellent cryptographic libraries
 - egui for the immediate-mode GUI framework
-
-## Disclaimer
-
-This is an educational and research tool. For production cryptographic applications, use well-vetted libraries and consult with security experts.
 
 ---
 
