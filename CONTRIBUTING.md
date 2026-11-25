@@ -26,7 +26,7 @@ Please be respectful and constructive in all interactions. See [CODE_OF_CONDUCT.
 4. Run the full local gate: `./scripts/check.sh`.
 5. Commit with a clear message, push to your fork and open a Pull Request.
 
-CI is authoritative; the script is the local mirror. The wasm-only host-only-API guard is currently red by design on `Instant::now` — see the [Roadmap](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Roadmap). Do not silence it silently in a feature PR.
+CI is authoritative; the script is the local mirror. The wasm-only guard rejects host-only APIs such as `Instant::now` in the web build — use the shared `time::Clock` for timing. See the [Roadmap](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Roadmap).
 
 ## Development setup
 

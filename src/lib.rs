@@ -47,6 +47,8 @@
 //! }
 //! ```
 
+pub(crate) mod time;
+
 pub mod bench;
 pub mod crypto;
 pub mod entropy;

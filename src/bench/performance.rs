@@ -1,7 +1,8 @@
 //! Performance benchmarking for entropy sources
 
 use crate::entropy::EntropySource;
-use std::time::{Duration, Instant};
+use crate::time::Clock;
+use std::time::Duration;
 
 /// Performance benchmark results
 #[derive(Debug, Clone)]
@@ -59,7 +60,7 @@ impl PerformanceBench {
 
         let mut buffer = vec![0u8; total_bytes];
 
-        let start = Instant::now();
+        let start = Clock::now();
         source.fill_bytes(&mut buffer);
         let duration = start.elapsed();
 
