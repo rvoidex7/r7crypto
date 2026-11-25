@@ -7,14 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-25
+
 ### Added
 - **Browser/WASM build**: `src/web.rs`, `index.html` and `Trunk.toml` provide a
   Trunk-powered web app from the same Rust code as the native GUI. The public
   URL is `/r7crypto/` for GitHub Pages.
-- A final `deploy` job in `.github/workflows/ci.yml` builds with
-  `trunk build --release` and publishes `dist/` through the official GitHub
-  Pages actions. It runs only on pushes to `main` and only after test, lint,
-  wasm, browser-smoke and Windows checks pass; generated site files are never
+- Separate `build-pages` and `deploy` jobs in `.github/workflows/ci.yml`.
+  `build-pages` builds with `trunk build --release` and uploads `dist/`;
+  `deploy` publishes it after the checks pass. Generated site files are never
   committed.
 - A wasm type-check job in CI
   (`cargo check --lib --bins --target wasm32-unknown-unknown --all-features --locked`).
@@ -29,7 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ordered NIST steps; SHA-256 avalanche determinism and bit order; distinct
   nonces and ChaCha20 malleability; benchmark repeatability and zero-byte
   handling; spinner/error visibility; bias and sample-size sliders reaching
-  jobs; and the full NIST verdict table. The suite now has 197 tests.
+  jobs; the full NIST verdict table; and native clock monotonicity. The suite
+  now has 198 tests.
 - `scripts/check.sh`: one local command that mirrors the full CI gate, including
   the feature matrix and the wasm-specific checks.
 - A wasm API guard in `ci/wasm-clippy/clippy.toml` plus a CI/Clippy step that denies
@@ -48,6 +50,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   mode that injects a known console error to prove the detector is attached.
 
 ### Changed
+- **License changed from MIT to GNU General Public License v3.0** in `LICENSE`,
+  `Cargo.toml`, the README and CONTRIBUTING. Releases published under MIT keep
+  their original license; GPLv3 applies from 0.5.0 onward.
+- Repository documentation now names
+  [r7notes / r7crypto](https://rvoidex7.github.io/r7notes/Projects/r7crypto)
+  as the single home for architecture, design decisions, dependencies,
+  build/CI and roadmap. The README keeps only the public entry point.
 - Removed the placeholder "Screenshots" section from the README; no screenshots
   exist, so it only advertised the web app under a misleading heading.
 - Test and Benchmark jobs now use the same incremental pipeline. NIST tests run
@@ -61,6 +70,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI installs Trunk from a prebuilt release instead of compiling it on every
   run, and the deployment job is named "Deploy web app" — the published build
   is the full workbench, not a reduced demo.
+- Pages artifact upload and deployment run in separate jobs. `deploy` waits for
+  `build-pages`, so the artifact lookup happens after the upload has settled
+  instead of racing it in the same job (actions/deploy-pages#451).
 
 ### Fixed
 - Trunk also builds Cargo's binary target for `wasm32`, where `eframe`'s native
@@ -79,6 +91,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   constrain their widths, so every control stays visible and clickable at
   360 px. Benchmarking zero bytes reports zero throughput/latency instead of
   `NaN`.
+- **Browser benchmarks no longer freeze.** Timing now goes through
+  `src/time.rs`: `performance.now()` on wasm and `Instant` natively, instead of
+  calling `std::time::Instant::now()` in the browser. The host-only API guard
+  stays in CI to prevent regression.
+- Updated `url` to 2.5.9 and `form_urlencoded` to 1.2.3
+  (RUSTSEC-2026-0592, stack overflow in `Url::origin()` on nested `blob:` URLs).
+  No first-party code calls `Url::origin()`.
+- Linux CI installs `libwayland-dev` before all-features builds; `wayland-sys`
+  probes for `wayland-client.pc`, which the Ubuntu runners do not ship.
 
 ## [0.4.0] - 2026-11-21
 
@@ -194,7 +215,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/rvoidex7/r7crypto/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/rvoidex7/r7crypto/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/rvoidex7/r7crypto/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/rvoidex7/r7crypto/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/rvoidex7/r7crypto/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/rvoidex7/r7crypto/compare/v0.1.0...v0.2.0
