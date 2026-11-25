@@ -32,6 +32,13 @@ jobs:
       - name: Cache cargo and target
         uses: Swatinem/rust-cache@v2
 
+      # eframe's wayland feature builds wayland-sys, which probes for
+      # wayland-client.pc. Ubuntu runners do not ship that pkg-config file.
+      - name: Install Linux GUI build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev
+
       - name: Run tests
         run: cargo test --all-features --locked
 
@@ -57,6 +64,13 @@ jobs:
 
       - name: Cache cargo and target
         uses: Swatinem/rust-cache@v2
+
+      # Same all-features build as the test job: wayland-sys needs the
+      # wayland-client.pc file from libwayland-dev.
+      - name: Install Linux GUI build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev
 
       - name: Check formatting
         run: cargo fmt --all -- --check
