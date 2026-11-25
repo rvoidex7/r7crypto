@@ -159,21 +159,14 @@ jobs:
       - name: Type-check all targets
         run: cargo check --all-targets --all-features --locked
 
-  deploy:
-    name: Deploy web app
-    # Publish only after every check passes on a push to main. Pull requests
-    # still run all checks, but never deploy.
+  build-pages:
+    name: Build web artifact
+    # Only build the deployable artifact on main pushes. Pull requests still run
+    # all checks above, but never produce a Pages artifact.
     needs: [test, lint, wasm, browser-smoke, windows]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
 
@@ -189,16 +182,35 @@ jobs:
       - name: Install Trunk
         uses: taiki-e/install-action@trunk
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v6
-
       - name: Build web app
         run: trunk build --release
 
+      # Upload and deploy must be separate jobs. Doing both in one job races
+      # the artifact API: the lookup can miss an artifact finalized moments
+      # earlier (actions/deploy-pages#451).
       - name: Upload site
         uses: actions/upload-pages-artifact@v5
         with:
           path: dist
+
+  deploy:
+    name: Deploy web app
+    needs: build-pages
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
 
       - name: Deploy
         id: deployment
