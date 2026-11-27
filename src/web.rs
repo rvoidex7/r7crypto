@@ -20,6 +20,10 @@ pub fn start() -> Result<(), JsValue> {
         .ok_or_else(|| JsValue::from_str("missing #r7crypto_canvas"))?
         .dyn_into::<web_sys::HtmlCanvasElement>()?;
 
+    // Static hosting needs a fragment, not a server-rewritten path. The app
+    // opens at the exact screen named by `#/...` (for example NIST Frequency).
+    let fragment = window.location().hash().unwrap_or_default();
+
     spawn_local(async move {
         let options = eframe::WebOptions {
             renderer: eframe::Renderer::Glow,
@@ -30,7 +34,7 @@ pub fn start() -> Result<(), JsValue> {
             .start(
                 canvas,
                 options,
-                Box::new(|_cc| Ok(Box::new(R7CryptoApp::default()))),
+                Box::new(move |_cc| Ok(Box::new(R7CryptoApp::from_fragment(&fragment)))),
             )
             .await
         {

@@ -21,6 +21,25 @@ const DOCS_URL: &str = "https://rvoidex7.github.io/r7notes/Projects/r7crypto";
 const CRYPTO_NOTES_URL: &str = "https://rvoidex7.github.io/r7notes/Cryptography";
 const REPO_URL: &str = "https://github.com/rvoidex7/r7crypto";
 
+/// Per-screen links. Each screen names the exact note and the exact source
+/// range it implements, so a reader never has to hunt through an index.
+const NOTES_ENTROPY: &str = "https://rvoidex7.github.io/r7notes/Cryptography/Entropy";
+const NOTES_NIST: &str = "https://rvoidex7.github.io/r7notes/Cryptography/NIST-Tests";
+const NOTES_CHACHA20: &str = "https://rvoidex7.github.io/r7notes/Cryptography/ChaCha20";
+const NOTES_AVALANCHE: &str = "https://rvoidex7.github.io/r7notes/Cryptography/Avalanche-Effect";
+const NOTES_RNG: &str = "https://rvoidex7.github.io/r7notes/Cryptography/Random-Number-Generators";
+
+const CODE_ROOT: &str = "https://github.com/rvoidex7/r7crypto/blob/main/";
+const CODE_CIPHER: &str = "src/crypto/cipher.rs#L107-L143";
+const CODE_AVALANCHE: &str = "src/crypto/avalanche.rs#L58-L143";
+const CODE_METRICS: &str = "src/quality/metrics.rs#L78-L199";
+const CODE_NIST: &str = "src/quality/nist.rs#L24-L48";
+const CODE_BENCH: &str = "src/bench/performance.rs#L48-L117";
+const CODE_XOR_STEPS: &str = "src/learn/steps.rs#L20-L85";
+const CODE_ENTROPY_LESSON: &str = "src/learn/entropy_visual.rs#L66-L161";
+const CODE_NIST_LESSON: &str = "src/learn/nist_visual.rs#L52-L137";
+const CODE_SOURCE_KINDS: &str = "src/entropy/kind.rs#L38-L100";
+
 /// Default `P(1)` for the biased source.
 const DEFAULT_BIAS: f64 = 0.75;
 
@@ -35,7 +54,7 @@ enum CipherMode {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum LearnMode {
+pub enum LearnMode {
     XorCipher,
     ShannonEntropy,
     NistFrequency,
@@ -166,6 +185,33 @@ impl R7CryptoApp {
     /// Select a tab programmatically.
     pub fn select_tab(&mut self, tab: Tab) {
         self.current_tab = tab;
+    }
+
+    /// Currently selected Learn lesson.
+    pub fn learn_mode(&self) -> LearnMode {
+        self.learn_mode
+    }
+
+    /// Build the app from a URL fragment such as `#/learn/nist-frequency`.
+    pub fn from_fragment(fragment: &str) -> Self {
+        let mut app = Self::default();
+        app.apply_fragment(fragment);
+        app
+    }
+
+    /// Apply a deep link. Malformed fragments leave the current screen alone.
+    pub fn apply_fragment(&mut self, fragment: &str) {
+        let Some(target) = super::deeplink::parse(fragment) else {
+            return;
+        };
+        self.current_tab = target.tab;
+        if let Some(lesson) = target.lesson {
+            self.learn_mode = match lesson {
+                super::deeplink::Lesson::XorCipher => LearnMode::XorCipher,
+                super::deeplink::Lesson::ShannonEntropy => LearnMode::ShannonEntropy,
+                super::deeplink::Lesson::NistFrequency => LearnMode::NistFrequency,
+            };
+        }
     }
 
     /// Currently selected entropy source.
@@ -355,6 +401,25 @@ impl R7CryptoApp {
         });
     }
 
+    /// Pair the exact background note with the exact implementation range.
+    fn render_context_links(
+        ui: &mut egui::Ui,
+        note_label: &str,
+        note_url: &str,
+        code_label: &str,
+        code_path: &str,
+    ) {
+        ui.horizontal_wrapped(|ui| {
+            ui.hyperlink_to(format!("Notes: {note_label}"), note_url)
+                .on_hover_text("Background in r7notes");
+            ui.hyperlink_to(
+                format!("Code: {code_label}"),
+                format!("{CODE_ROOT}{code_path}"),
+            )
+            .on_hover_text("Exact implementation in the repository");
+        });
+    }
+
     /// The RNG selector. Its label names the whole class of options, and the
     /// hover text explains the current source and where it is used.
     fn render_source_selector(&mut self, ui: &mut egui::Ui) {
@@ -453,6 +518,7 @@ impl R7CryptoApp {
             "Encrypt or decrypt data with a real ChaCha20 keystream. \
              Encryption and decryption are exact inverses for the same passphrase and nonce.",
         );
+        Self::render_context_links(ui, "ChaCha20", NOTES_CHACHA20, CODE_CIPHER, CODE_CIPHER);
 
         ui.add_space(SECTION_GAP);
 
@@ -796,6 +862,8 @@ impl R7CryptoApp {
         if self.source_kind == SourceKind::System {
             ui.label("In the browser, System uses crypto.getRandomValues().");
         }
+        Self::render_context_links(ui, "Entropy", NOTES_ENTROPY, CODE_METRICS, CODE_METRICS);
+        Self::render_context_links(ui, "NIST Tests", NOTES_NIST, CODE_NIST, CODE_NIST);
         ui.add_space(10.0);
 
         ui.horizontal(|ui| {
@@ -993,6 +1061,14 @@ impl R7CryptoApp {
         if self.source_kind == SourceKind::System {
             ui.label("In the browser, System uses crypto.getRandomValues().");
         }
+        Self::render_context_links(
+            ui,
+            "RNG sources",
+            NOTES_RNG,
+            CODE_SOURCE_KINDS,
+            CODE_SOURCE_KINDS,
+        );
+        Self::render_context_links(ui, "RNG speed", NOTES_RNG, CODE_BENCH, CODE_BENCH);
         ui.add_space(10.0);
 
         ui.horizontal(|ui| {
@@ -1077,6 +1153,13 @@ impl R7CryptoApp {
         ui.label(
             "Flip one bit of the input. A good hash changes about half of its \
              256 output bits — far fewer means the input is not being diffused.",
+        );
+        Self::render_context_links(
+            ui,
+            "Avalanche Effect",
+            NOTES_AVALANCHE,
+            CODE_AVALANCHE,
+            CODE_AVALANCHE,
         );
         ui.add_space(SECTION_GAP);
 
@@ -1212,6 +1295,13 @@ impl R7CryptoApp {
 
         ui.heading("Learn Cryptography: XOR Cipher");
         ui.label("Visualize how a stream cipher XORs keystream bytes with UTF-8 bytes.");
+        Self::render_context_links(
+            ui,
+            "ChaCha20",
+            NOTES_CHACHA20,
+            CODE_XOR_STEPS,
+            CODE_XOR_STEPS,
+        );
         ui.add_space(10.0);
 
         ui.horizontal_wrapped(|ui| {
@@ -1397,6 +1487,13 @@ impl R7CryptoApp {
 
         ui.heading("Learn Shannon Entropy");
         ui.label("Measures the unpredictability of the UTF-8 bytes in the input.");
+        Self::render_context_links(
+            ui,
+            "Entropy",
+            NOTES_ENTROPY,
+            CODE_ENTROPY_LESSON,
+            CODE_ENTROPY_LESSON,
+        );
         ui.add_space(10.0);
 
         ui.horizontal_wrapped(|ui| {
@@ -1635,6 +1732,14 @@ impl R7CryptoApp {
 
         ui.heading("Learn NIST Frequency Test");
         ui.label("Checks whether the number of 1s and 0s is approximately equal.");
+        Self::render_context_links(
+            ui,
+            "NIST Tests",
+            NOTES_NIST,
+            CODE_NIST_LESSON,
+            CODE_NIST_LESSON,
+        );
+        Self::render_context_links(ui, "SP 800-22", NOTES_NIST, CODE_NIST, CODE_NIST);
         ui.add_space(10.0);
 
         ui.horizontal_wrapped(|ui| {

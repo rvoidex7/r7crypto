@@ -29,7 +29,7 @@ with quality testing, visualization and **interactive educational tools**.
 
 ### Try it in the browser
 
-Open <https://rvoidex7.github.io/r7crypto/> — no installation needed.
+Open <https://rvoidex7.github.io/r7crypto/> — no installation needed. A note can also open a specific screen, for example [Learn NIST Frequency](https://rvoidex7.github.io/r7crypto/#/learn/nist-frequency).
 
 ### Download a desktop binary
 

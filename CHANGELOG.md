@@ -8,14 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Hash deep links such as `#/learn/nist-frequency`, so a note can open the exact
+  screen and lesson instead of just the app. The web bootstrap reads the
+  fragment; malformed fragments leave the default screen in place.
 - Header links to [crypto notes](https://rvoidex7.github.io/r7notes/Cryptography),
   [project docs](https://rvoidex7.github.io/r7notes/Projects/r7crypto) and the
-  [repository](https://github.com/rvoidex7/r7crypto), so the app, both note
-  indexes and the repo point at each other without duplicating facts.
+  [repository](https://github.com/rvoidex7/r7crypto). Every screen also links to
+  its exact background note and the precise source range that implements it.
+  The notes link back to the same screen and source lines, so the connection is
+  specific rather than a generic entry point.
 
 ### Tests
-- `tests/mobile_ui_test.rs` now checks that both header links are present and
-  stay inside a 360 px viewport.
+- `tests/deep_link_ui_test.rs`: fragment parsing, exact lesson selection and
+  per-screen note/code links.
+- `tests/mobile_ui_test.rs` now checks that all three header links are present
+  and stay inside a 360 px viewport.
 
 ## [0.5.0] - 2026-11-25
 

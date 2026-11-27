@@ -1,10 +1,11 @@
 //! GUI visualization using egui.
 
 mod app;
+pub(crate) mod deeplink;
 pub mod icon;
 pub(crate) mod job;
 
-pub use app::{R7CryptoApp, Tab};
+pub use app::{LearnMode, R7CryptoApp, Tab};
 
 /// Vertical gap between related form fields.
 ///

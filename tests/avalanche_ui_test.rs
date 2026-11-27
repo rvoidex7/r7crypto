@@ -36,9 +36,7 @@ fn avalanche_tab_is_reachable_from_the_tab_bar() {
     harness.run();
 
     assert_eq!(harness.state().current_tab(), Tab::Avalanche);
-    assert!(harness
-        .query_by_label_contains("Avalanche Effect")
-        .is_some());
+    harness.get_by_label("Avalanche Effect (SHA-256)");
 }
 
 #[test]
