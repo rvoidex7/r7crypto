@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Header links to [crypto notes](https://rvoidex7.github.io/r7notes/Cryptography),
+  [project docs](https://rvoidex7.github.io/r7notes/Projects/r7crypto) and the
+  [repository](https://github.com/rvoidex7/r7crypto), so the app, both note
+  indexes and the repo point at each other without duplicating facts.
+
+### Tests
+- `tests/mobile_ui_test.rs` now checks that both header links are present and
+  stay inside a 360 px viewport.
+
 ## [0.5.0] - 2026-11-25
 
 ### Added

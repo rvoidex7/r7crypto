@@ -87,6 +87,25 @@ fn mobile_360px_header_with_bias_slider_does_not_overflow() {
 }
 
 #[test]
+fn header_links_are_present_and_fit_360px() {
+    let mut harness = Harness::builder()
+        .with_size(egui::vec2(VIEWPORT_WIDTH, 800.0))
+        .allow_missing_glyphs()
+        .build_eframe(|_cc| R7CryptoApp::default());
+
+    harness.run_steps(2);
+
+    // Three entry points stay in the header: crypto notes, project docs and repo.
+    harness.get_by_label("Crypto notes");
+    harness.get_by_label("Project docs");
+    harness.get_by_label("Source");
+
+    let root = harness.root();
+    let pixels_per_point = harness.ctx.pixels_per_point();
+    assert_within_viewport_width(&root, "Header links", pixels_per_point);
+}
+
+#[test]
 fn mobile_360px_avalanche_grid_does_not_overflow() {
     let mut harness = Harness::builder()
         .with_size(egui::vec2(VIEWPORT_WIDTH, 800.0))

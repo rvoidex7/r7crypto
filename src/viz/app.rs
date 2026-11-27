@@ -15,6 +15,12 @@ use super::{FIELD_GAP, SECTION_GAP};
 /// Height of the header icon, sized to sit beside the two header text lines.
 const HEADER_ICON_SIZE: f32 = 40.0;
 
+/// Canonical entry points. The notes and the repository own these facts; the
+/// app only links to them, so no URL or description is duplicated in the UI.
+const DOCS_URL: &str = "https://rvoidex7.github.io/r7notes/Projects/r7crypto";
+const CRYPTO_NOTES_URL: &str = "https://rvoidex7.github.io/r7notes/Cryptography";
+const REPO_URL: &str = "https://github.com/rvoidex7/r7crypto";
+
 /// Default `P(1)` for the biased source.
 const DEFAULT_BIAS: f64 = 0.75;
 
@@ -315,6 +321,8 @@ impl R7CryptoApp {
                 ui.horizontal(|ui| self.render_bias_control(ui));
             }
         }
+        ui.add_space(2.0);
+        self.render_links(ui);
     }
 
     /// The app icon and wordmark.
@@ -331,6 +339,20 @@ impl R7CryptoApp {
             egui::vec2(HEADER_ICON_SIZE, HEADER_ICON_SIZE),
         )));
         ui.heading("r7 Crypto Lab");
+    }
+
+    /// The three outward links. They live on their own row so the header keeps
+    /// working at 360 px, where the source selector and bias slider already
+    /// wrap onto separate lines.
+    fn render_links(&self, ui: &mut egui::Ui) {
+        ui.horizontal_wrapped(|ui| {
+            ui.hyperlink_to("Crypto notes", CRYPTO_NOTES_URL)
+                .on_hover_text("Background notes: entropy, RNGs, ciphers and tests");
+            ui.hyperlink_to("Project docs", DOCS_URL)
+                .on_hover_text("Architecture, decisions, build and roadmap");
+            ui.hyperlink_to("Source", REPO_URL)
+                .on_hover_text("Repository, releases and source code");
+        });
     }
 
     /// The RNG selector. Its label names the whole class of options, and the
