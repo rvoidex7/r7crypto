@@ -1,7 +1,7 @@
 //! Headless narrow-screen (360x800 logical pixels) rendering test.
 //!
-//! This catches desktop-only fixed widths and colliding `egui::Id`s before an
-//! Android build is attempted.
+//! This catches desktop-only fixed widths and colliding `egui::Id`s. Android
+//! itself is deferred: [Roadmap → Deferred](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Roadmap#deferred).
 
 #![cfg(feature = "gui")]
 
@@ -95,7 +95,6 @@ fn header_links_are_present_and_fit_360px() {
 
     harness.run_steps(2);
 
-    // Three entry points stay in the header: crypto notes, project docs and repo.
     harness.get_by_label("Crypto notes");
     harness.get_by_label("Project docs");
     harness.get_by_label("Source");

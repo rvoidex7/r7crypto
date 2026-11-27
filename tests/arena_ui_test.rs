@@ -1,8 +1,8 @@
 //! RNG Arena UI tests.
 //!
 //! These drive the real widgets: the header source selector, the bias slider,
-//! and the Test / Benchmark buttons. They assert that the selected source
-//! actually reaches the background job, not just the label.
+//! and the Test / Benchmark buttons. Several also assert that the selected
+//! source reaches the background job, not just the label.
 
 #![cfg(feature = "gui")]
 

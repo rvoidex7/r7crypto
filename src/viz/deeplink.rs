@@ -21,8 +21,9 @@ pub struct Target {
     pub lesson: Option<Lesson>,
 }
 
-/// Parse a `window.location.hash` value. Unknown or partial fragments are
-/// ignored so a stale link still opens the app instead of failing to start.
+/// Parse a `window.location.hash` value. Unknown or partial fragments fall
+/// back to the default screen so a stale link still opens a usable app.
+/// See [Roadmap](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Roadmap).
 pub fn parse(fragment: &str) -> Option<Target> {
     let path = fragment.strip_prefix("#/")?;
     let mut parts = path.split('/').filter(|part| !part.is_empty());

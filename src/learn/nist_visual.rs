@@ -1,3 +1,7 @@
+//! Five-step monobit walkthrough; theory:
+//! [SP 800-22 tests](https://rvoidex7.github.io/r7notes/Cryptography/NIST-Tests#sp-800-22-tests-used-in-r7crypto).
+//! Open [Learn NIST Frequency](https://rvoidex7.github.io/r7crypto/#/learn/nist-frequency).
+
 use crate::quality::bits::bytes_to_bits_msb;
 use crate::quality::NistTests;
 
@@ -13,7 +17,8 @@ pub enum NistStepType {
 #[derive(Debug, Clone)]
 pub struct NistFrequencyStep {
     pub step_type: NistStepType,
-    pub bits: Vec<u8>, // 0 or 1
+    /// One bit per byte (0 or 1), MSB-first within each byte.
+    pub bits: Vec<u8>,
     pub ones_count: usize,
     pub zeros_count: usize,
     pub sum: i64,
@@ -22,6 +27,7 @@ pub struct NistFrequencyStep {
     pub passed: bool,
 }
 
+/// Playback state for the five-step walkthrough.
 pub struct NistProcess {
     pub input_text: String,
     pub steps: Vec<NistFrequencyStep>,
@@ -60,7 +66,7 @@ impl NistProcess {
             return;
         }
 
-        // --- Step 1: Convert to Bits (MSB-first, shared helper) ---
+        // Shared MSB-first convention: https://rvoidex7.github.io/r7notes/Projects/r7crypto/Architecture#msb-first-bit-reader.
         let bits = bytes_to_bits_msb(data);
 
         self.steps.push(NistFrequencyStep {
@@ -74,7 +80,6 @@ impl NistProcess {
             passed: false,
         });
 
-        // --- Step 2: Count Ones and Zeros ---
         let ones_count = bits.iter().filter(|&&b| b == 1).count();
         let zeros_count = bits.len() - ones_count;
 
@@ -89,8 +94,6 @@ impl NistProcess {
             passed: false,
         });
 
-        // --- Step 3: Calculate Statistic ---
-        // Sum = (+1 * ones) + (-1 * zeros)
         let sum = (ones_count as i64) - (zeros_count as i64);
         let n = bits.len() as f64;
         let s_obs = (sum as f64).abs() / n.sqrt();
@@ -106,8 +109,6 @@ impl NistProcess {
             passed: false,
         });
 
-        // --- Step 4: Calculate P-Value ---
-        // p_value = erfc(S_obs / sqrt(2))
         let p_value = NistTests::erfc(s_obs / std::f64::consts::SQRT_2);
 
         self.steps.push(NistFrequencyStep {
@@ -118,10 +119,9 @@ impl NistProcess {
             sum,
             s_obs,
             p_value,
-            passed: false, // Not decided yet visually, but mathematically yes
+            passed: false, // The verdict is shown only at the Interpret step.
         });
 
-        // --- Step 5: Interpretation ---
         let passed = p_value >= 0.01;
         self.steps.push(NistFrequencyStep {
             step_type: NistStepType::Interpret,
@@ -141,16 +141,10 @@ impl NistProcess {
         let mut data = vec![0u8; count];
         entropy.fill_bytes(&mut data);
 
-        // Compromise: Generate a random string of alphanumeric characters.
-        // It's easy to understand and has high entropy.
-
-        // Re-using SystemEntropy is better as I already have it.
-        // SystemEntropy fills bytes. I can map them to chars.
-
         let chars: String = data
             .iter()
             .map(|&b| {
-                // map to printable ascii range 33-126
+                // Printable ASCII 33..=125 (93 symbols); modulo mapping is slightly biased.
                 let c = 33 + (b % (126 - 33));
                 c as char
             })
@@ -185,6 +179,7 @@ impl NistProcess {
         self.is_playing = !self.is_playing;
     }
 
+    /// Tick playback; `time` is egui seconds, `speed` comes from a 0.1..=5.0 slider.
     pub fn update(&mut self, time: f64) {
         if self.is_playing {
             if time - self.last_update > (1.0 / self.speed as f64) {

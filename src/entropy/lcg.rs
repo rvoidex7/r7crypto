@@ -5,11 +5,9 @@ use super::EntropySource;
 /// The two LCG parameter sets worth studying.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LcgPreset {
-    /// The classic glibc `rand()` constants: full period, still structurally
-    /// broken.
+    /// The classic glibc constants.
     Glibc,
-    /// IBM's RANDU: notorious for producing output that lies on 15 planes in
-    /// three dimensions.
+    /// IBM RANDU, notorious in three dimensions.
     Randu,
 }
 
@@ -31,8 +29,8 @@ impl LcgPreset {
 ///
 /// # Security Note
 ///
-/// LCGs are predictable from a handful of outputs and show lattice structure.
-/// They exist here to be measured, not used.
+/// Study only, never use. See
+/// [Weak generators, on purpose](https://rvoidex7.github.io/r7notes/Cryptography/Random-Number-Generators#weak-generators-on-purpose).
 #[derive(Debug, Clone)]
 pub struct LcgSource {
     preset: LcgPreset,
@@ -44,7 +42,7 @@ impl LcgSource {
     /// Create a generator with the given preset and seed.
     pub fn new(preset: LcgPreset, seed: u64) -> Self {
         let mut state = (seed as u32) & 0x7FFF_FFFF;
-        // RANDU maps zero to zero forever; nudge it off the fixed point.
+        // RANDU sticks at zero; nudge either preset off zero, harmless for glibc.
         if state == 0 {
             state = 1;
         }

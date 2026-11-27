@@ -30,7 +30,7 @@ pub struct EncryptionStep {
 }
 
 impl EncryptionStep {
-    /// Create a step from a raw UTF-8 byte and its keystream byte.
+    /// XOR the bytes and derive eight MSB-first bit operations.
     pub fn new(input_byte: u8, keystream_byte: u8, character: char, byte_offset: usize) -> Self {
         let result_byte = input_byte ^ keystream_byte;
 
@@ -70,14 +70,17 @@ impl EncryptionStep {
         }
     }
 
+    /// Eight MSB-first binary digits for display.
     pub fn input_binary(&self) -> String {
         format!("{:08b}", self.input_byte)
     }
 
+    /// Eight MSB-first binary digits for display.
     pub fn keystream_binary(&self) -> String {
         format!("{:08b}", self.keystream_byte)
     }
 
+    /// Eight MSB-first binary digits for display.
     pub fn result_binary(&self) -> String {
         format!("{:08b}", self.result_byte)
     }

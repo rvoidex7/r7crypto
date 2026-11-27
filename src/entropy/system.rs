@@ -1,18 +1,12 @@
-//! System entropy source using OS random number generator
+//! OS CSPRNG via `getrandom`; on wasm this is Web Crypto.
+//! See [The operating system CSPRNG](https://rvoidex7.github.io/r7notes/Cryptography/Random-Number-Generators#the-operating-system-csprng).
 
 use super::EntropySource;
 use getrandom::getrandom;
 
-/// System entropy source (uses OS RNG)
+/// System entropy source via `getrandom` (Web Crypto on wasm).
 ///
-/// This implementation uses the operating system's cryptographically secure
-/// random number generator:
-/// - Linux/Android: `/dev/urandom`
-/// - macOS/iOS: `SecRandomCopyBytes`
-/// - Windows: `BCryptGenRandom`
-///
-/// This is the default entropy source and provides good quality randomness
-/// for most applications.
+/// This is the reference source in the RNG Arena.
 ///
 /// # Examples
 ///
@@ -35,9 +29,8 @@ impl SystemEntropy {
 
 impl EntropySource for SystemEntropy {
     fn fill_bytes(&mut self, dest: &mut [u8]) {
-        getrandom(dest).expect(
-            "Failed to get system entropy - this should never happen on supported platforms",
-        );
+        // Panic by design: a silent fallback would be worse.
+        getrandom(dest).expect("system CSPRNG failed");
     }
 
     fn name(&self) -> &str {
@@ -71,7 +64,6 @@ mod tests {
         entropy.fill_bytes(&mut buf1);
         entropy.fill_bytes(&mut buf2);
 
-        // Should produce different output each time
         assert_ne!(buf1, buf2);
     }
 
@@ -82,11 +74,10 @@ mod tests {
 
         entropy.fill_bytes(&mut buf);
 
-        // Check that we have good distribution (not all zeros)
+        // Around 1 in 256 bytes should be zero; 2x slack for sampling.
         let zeros = buf.iter().filter(|&&b| b == 0).count();
-        let expected_zeros = 1_000_000 / 256; // ~3906
+        let expected_zeros = 1_000_000 / 256;
 
-        // Should be roughly 1/256 of bytes (allow 2x variance)
         assert!(zeros > expected_zeros / 2);
         assert!(zeros < expected_zeros * 2);
     }

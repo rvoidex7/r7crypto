@@ -1,3 +1,6 @@
+//! Teaching state machines only; rendering lives in `viz`.
+//! Layering rationale: https://rvoidex7.github.io/r7notes/Projects/r7crypto/Architecture#why-the-layers-exist
+
 pub mod entropy_visual;
 pub mod nist_visual;
 pub mod steps;

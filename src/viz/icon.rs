@@ -6,7 +6,7 @@
 
 use eframe::egui;
 
-/// 256x256 export of `assets/icons/source/icon.png`.
+/// 256×256 PNG from `assets/icons/128x128@2x.png`.
 ///
 /// Large enough for HiDPI window icons, small enough to decode on startup.
 const ICON_PNG: &[u8] = include_bytes!("../../assets/icons/128x128@2x.png");

@@ -1,21 +1,18 @@
 //! The selectable set of entropy sources shown in the RNG Arena.
+//! Open [Test](https://rvoidex7.github.io/r7crypto/#/test) or
+//! [Benchmark](https://rvoidex7.github.io/r7crypto/#/benchmark) to use them.
 
 use super::{
     BiasedSource, ChaCha20Source, CounterSource, EntropySource, LcgPreset, LcgSource, Lfsr16Source,
     SystemEntropy,
 };
 
-/// Seed used for every deterministic source in the arena.
-///
-/// A fixed seed makes a run reproducible: the same source always produces the
-/// same bytes, so a screenshot or a bug report can be compared against a fresh
-/// run. The system source ignores it.
+/// Fixed seed for deterministic arena sources; the system source ignores it.
+/// See [Seeded CSPRNG](https://rvoidex7.github.io/r7notes/Cryptography/Random-Number-Generators#seeded-csprng).
 pub const ARENA_SEED: u64 = 0x5EED_1234_5678_9ABC;
 
-/// Which entropy source the app should use.
-///
-/// `SourceKind` is deliberately `Copy` and holds no generator state, so it can
-/// be moved into a worker thread where the actual source is built.
+/// State-free selector value, safe to pass into a job. See
+/// [The RNG Arena](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Architecture#the-rng-arena).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SourceKind {
     /// Operating-system CSPRNG. The reference source.
@@ -60,7 +57,7 @@ impl SourceKind {
         }
     }
 
-    /// One-line explanation of what this source is and where it fails.
+    /// One-line UI summary of the source and its weakness where relevant.
     pub const fn description(self) -> &'static str {
         match self {
             Self::System => "OS CSPRNG — the reference source. Should pass every test.",

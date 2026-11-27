@@ -1,11 +1,9 @@
-//! Mock entropy source for testing
+//! Deterministic test helper; see
+//! [Architecture](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Architecture#the-one-abstraction).
 
 use super::EntropySource;
 
-/// Mock entropy source for testing
-///
-/// This source produces predictable output, which is useful for testing
-/// and debugging. DO NOT use in production!
+/// Deterministic test source. DO NOT use in production!
 ///
 /// # Examples
 ///
@@ -15,7 +13,7 @@ use super::EntropySource;
 /// let mut entropy = MockEntropy::new(42);
 /// let mut buffer = [0u8; 4];
 /// entropy.fill_bytes(&mut buffer);
-/// // buffer now contains predictable bytes based on seed
+/// assert_eq!(buffer, [0xCAu8, 0xC2, 0xBB, 0xE3]);
 /// ```
 #[derive(Debug, Clone)]
 pub struct MockEntropy {
@@ -32,8 +30,7 @@ impl MockEntropy {
         }
     }
 
-    // Simple LCG (Linear Congruential Generator)
-    // Using glibc's constants
+    // Cheap deterministic test bytes, not crypto: classic ANSI C LCG constants.
     fn next(&mut self) -> u8 {
         self.state = self.state.wrapping_mul(1103515245).wrapping_add(12345);
         (self.state >> 24) as u8
@@ -78,7 +75,6 @@ mod tests {
         entropy1.fill_bytes(&mut buf1);
         entropy2.fill_bytes(&mut buf2);
 
-        // Same seed should produce same output
         assert_eq!(buf1, buf2);
     }
 
@@ -93,7 +89,6 @@ mod tests {
         entropy1.fill_bytes(&mut buf1);
         entropy2.fill_bytes(&mut buf2);
 
-        // Different seeds should produce different output
         assert_ne!(buf1, buf2);
     }
 
@@ -108,7 +103,6 @@ mod tests {
         entropy.reset();
         entropy.fill_bytes(&mut buf2);
 
-        // After reset, should produce same output
         assert_eq!(buf1, buf2);
     }
 }

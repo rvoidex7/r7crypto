@@ -1,4 +1,5 @@
-//! Main GUI application.
+//! Main GUI application. Screen contracts live in
+//! [Interface](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Interface).
 
 use eframe::egui;
 
@@ -15,8 +16,8 @@ use super::{FIELD_GAP, SECTION_GAP};
 /// Height of the header icon, sized to sit beside the two header text lines.
 const HEADER_ICON_SIZE: f32 = 40.0;
 
-/// Canonical entry points. The notes and the repository own these facts; the
-/// app only links to them, so no URL or description is duplicated in the UI.
+/// Canonical entry points. The notes and the repository own these facts;
+/// the app only points at them, so the URLs stay in one place.
 const DOCS_URL: &str = "https://rvoidex7.github.io/r7notes/Projects/r7crypto";
 const CRYPTO_NOTES_URL: &str = "https://rvoidex7.github.io/r7notes/Cryptography";
 const REPO_URL: &str = "https://github.com/rvoidex7/r7crypto";
@@ -53,6 +54,8 @@ enum CipherMode {
     Decrypt,
 }
 
+/// Lesson selected in the Learn tab. See
+/// [Interface → Learn](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Interface#learn).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LearnMode {
     XorCipher,
@@ -80,7 +83,6 @@ pub struct R7CryptoApp {
     // worker thread with its own source so the UI never blocks.
     entropy: Box<dyn EntropySource>,
 
-    // Current tab.
     current_tab: Tab,
 
     // Header icon, decoded from the bundled PNG on first frame.

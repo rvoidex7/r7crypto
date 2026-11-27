@@ -2,8 +2,8 @@
 //!
 //! NIST SP 800-22 treats a byte sequence as a bit sequence in **MSB-first**
 //! order: the most significant bit (bit 7) of each byte comes first. All
-//! quality tests in this crate must use these helpers instead of building
-//! `Vec<u8>` bit vectors, which would inflate memory usage by 8x.
+//! quality tests in this crate must use these helpers. See
+//! [MSB-first bit reader](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Architecture#msb-first-bit-reader).
 
 /// Number of bits in a byte slice.
 #[inline]

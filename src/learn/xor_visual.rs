@@ -1,9 +1,10 @@
-//! State machine for the step-by-step XOR cipher visualization.
+//! Playback state for the XOR walkthrough; no rendering here.
+//! Open [Learn XOR](https://rvoidex7.github.io/r7crypto/#/learn/xor-cipher).
 
 use super::steps::EncryptionStep;
 use crate::entropy::{EntropySource, SystemEntropy};
 
-/// Manages the state of the XOR learning visualization.
+/// Playback state; one step per input byte, no rendering here.
 pub struct EncryptionProcess {
     pub input_text: String,
     pub steps: Vec<EncryptionStep>,
@@ -11,7 +12,7 @@ pub struct EncryptionProcess {
     pub is_playing: bool,
     /// Steps per second (approximate).
     pub speed: f32,
-    /// Timestamp of the last animation update.
+    /// Seconds since app start of the last tick (egui `input.time`).
     pub last_update: f64,
 }
 
@@ -33,10 +34,8 @@ impl EncryptionProcess {
         Self::default()
     }
 
-    /// Initialize the visualization with the given text.
-    ///
-    /// Iterates over UTF-8 bytes (`text.as_bytes()`), so multi-byte Turkish
-    /// characters and emoji are represented exactly.
+    /// Reset playback; one step per byte, because casting `char` to `u8`
+    /// truncates multi-byte input.
     pub fn start(&mut self, text: &str) {
         self.input_text = text.to_string();
         self.steps.clear();
@@ -88,7 +87,7 @@ impl EncryptionProcess {
         self.is_playing = !self.is_playing;
     }
 
-    /// Advance the animation based on the current time.
+    /// Tick playback using monotonic seconds from egui `input.time`.
     pub fn update(&mut self, time: f64) {
         if self.is_playing {
             let interval = 1.0 / self.speed.max(0.1) as f64;

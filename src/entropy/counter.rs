@@ -4,13 +4,14 @@ use super::EntropySource;
 
 /// Produces `0, 1, 2, ..., 255, 0, 1, ...`.
 ///
-/// This is the pedagogical centre of the lab: the histogram is perfect, the
-/// chi-square statistic is zero, and the next byte is fully predictable.
+/// The histogram is perfect and χ² is zero for each full cycle, yet the next
+/// byte is fully predictable. See
+/// [Why they diverge](https://rvoidex7.github.io/r7notes/Cryptography/Entropy#why-they-diverge).
 ///
 /// # Security Note
 ///
-/// A counter has zero entropy no matter how uniform it looks. Never use it as
-/// a random source.
+/// Do not use: transitions are deterministic despite a uniform histogram.
+/// Shannon entropy here is 8 bits/byte; conditional min-entropy is 0.
 #[derive(Debug, Clone)]
 pub struct CounterSource {
     next: u8,

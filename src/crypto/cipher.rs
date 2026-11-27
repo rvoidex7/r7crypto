@@ -1,7 +1,7 @@
 //! Stream ciphers.
 //!
 //! [`StreamCipher`] is an educational one-time pad. [`KeyedStreamCipher`] uses
-//! ChaCha20 and supports real, reversible encryption.
+//! ChaCha20 and supports real, reversible encryption. Open [Use](https://rvoidex7.github.io/r7crypto/#/use).
 
 use crate::entropy::EntropySource;
 use chacha20::cipher::{KeyIvInit, StreamCipher as CipherTrait};
@@ -17,9 +17,8 @@ use sha2::{Digest, Sha256};
 ///
 /// # Security Note
 ///
-/// This is an educational implementation. It is malleable: flipping one
-/// plaintext bit flips exactly one ciphertext bit. It has no plaintext
-/// avalanche effect, by design. Do not use it for real data.
+/// Educational only; malleable, no plaintext avalanche effect. Do not use
+/// for real data. See [The misconception](https://rvoidex7.github.io/r7notes/Cryptography/Avalanche-Effect#the-misconception).
 ///
 /// # Examples
 ///
@@ -84,8 +83,13 @@ impl<E: EntropySource> StreamCipher<E> {
 
 /// Real ChaCha20 stream cipher with a 256-bit key and 96-bit nonce.
 ///
-/// Encryption and decryption use the exact same operation and are guaranteed
-/// to be inverses for the same key and nonce.
+/// Encryption and decryption use the exact same operation and are inverses
+/// for the same key and nonce.
+///
+/// # Security
+///
+/// Never reuse a nonce under one key: reuse leaks `P1 ^ P2`. See
+/// [Why nonce reuse is fatal](https://rvoidex7.github.io/r7notes/Cryptography/ChaCha20#why-nonce-reuse-is-fatal).
 ///
 /// # Examples
 ///
@@ -103,7 +107,7 @@ impl<E: EntropySource> StreamCipher<E> {
 pub struct KeyedStreamCipher;
 
 impl KeyedStreamCipher {
-    /// Encrypt or decrypt `data` with ChaCha20.
+    /// Encrypt or decrypt `data` with ChaCha20 under the given key and nonce.
     pub fn process_chacha20(key: &[u8; 32], nonce: &[u8; 12], data: &[u8]) -> Vec<u8> {
         let mut output = data.to_vec();
         let mut cipher = ChaCha20::new(key.into(), nonce.into());
@@ -113,8 +117,8 @@ impl KeyedStreamCipher {
 
     /// Derive a 256-bit ChaCha20 key from a passphrase with SHA-256.
     ///
-    /// For demonstration purposes only. Password-based key derivation should
-    /// use Argon2 or PBKDF2 with a salt in production.
+    /// Demonstration only — not a password KDF; see
+    /// [Key derivation from a passphrase](https://rvoidex7.github.io/r7notes/Cryptography/ChaCha20#key-derivation-from-a-passphrase).
     pub fn derive_key(passphrase: &str) -> [u8; 32] {
         let digest = Sha256::digest(passphrase.as_bytes());
         let mut key = [0u8; 32];
@@ -122,7 +126,8 @@ impl KeyedStreamCipher {
         key
     }
 
-    /// Generate a random 96-bit nonce from the operating system.
+    /// Generate a random 96-bit nonce from the platform CSPRNG
+    /// (OS on native, Web Crypto on wasm).
     pub fn random_nonce() -> [u8; 12] {
         let mut nonce = [0u8; 12];
         getrandom::getrandom(&mut nonce).expect("operating system RNG failed");
@@ -196,9 +201,8 @@ mod tests {
 
     #[test]
     fn xor_cipher_is_malleable_not_avalanche() {
-        // With a fixed keystream, flipping one plaintext bit flips exactly one
-        // ciphertext bit. This documents the property the old code mislabeled
-        // as an avalanche effect.
+        // With a fixed keystream, one plaintext bit flip changes exactly one
+        // ciphertext bit — malleability, not diffusion.
         let mut entropy = MockEntropy::new(7);
         let mut keystream = vec![0u8; 32];
         entropy.fill_bytes(&mut keystream);

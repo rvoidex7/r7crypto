@@ -31,7 +31,8 @@ fn main() -> Result<(), eframe::Error> {
     )
 }
 
-// Trunk compiles the library as the web entry point, but Cargo still sees this
-// binary target. It has no native API on wasm32, so keep it as a no-op there.
+// Trunk builds only the cdylib; `desktop` gates this bin.
+// Keep a no-op for the all-features wasm type-check, where eframe's native API is absent.
+// See Feature layout: https://rvoidex7.github.io/r7notes/Projects/r7crypto/Build-and-Release#feature-layout
 #[cfg(target_arch = "wasm32")]
 fn main() {}

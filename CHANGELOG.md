@@ -18,6 +18,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The notes link back to the same screen and source lines, so the connection is
   specific rather than a generic entry point.
 
+### Changed
+- Comment audit across all `.rs` files: wrong or stale claims corrected,
+  obvious noise removed, and long explanations replaced by links to the exact
+  r7notes section. Module docs now also link back to the app screen they
+  implement.
+
+### Fixed
+- `benchmark_avg(..., iterations: 0)` returned `NaN`; it now returns a zeroed
+  result, with a regression test.
+- `examples/quality_check.rs` printed `/5` and used a 4/5 threshold although
+  `run_all_tests` returns nine P-values. The total is now derived from the
+  result and the threshold is a plain majority.
+
 ### Tests
 - `tests/deep_link_ui_test.rs`: fragment parsing, exact lesson selection and
   per-screen note/code links.

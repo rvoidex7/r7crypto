@@ -1,11 +1,8 @@
-//! Entropy quality metrics.
+//! Entropy quality metrics beyond plain Shannon entropy.
 //!
-//! These metrics go beyond plain Shannon entropy. A deterministic counter
-//! (`0, 1, 2, ..., 255`) has perfect Shannon entropy and a perfect mean, yet
-//! it has zero cryptographic security. The metrics in this module therefore
-//! include conservative min-entropy (NIST SP 800-90B), conditional
-//! (Markov-1) min-entropy, lag-1 serial correlation, and a two-sided
-//! chi-square anomaly check.
+//! See [Why they diverge](https://rvoidex7.github.io/r7notes/Cryptography/Entropy#why-they-diverge)
+//! for the counter example. Open [Test](https://rvoidex7.github.io/r7crypto/#/test)
+//! to run these metrics.
 
 use crate::entropy::EntropySource;
 use crate::quality::bits::BitsMsb;
@@ -152,9 +149,9 @@ impl QualityMetrics {
     /// A deterministic counter yields exactly 0.0 here even though its
     /// Shannon entropy is 8.0.
     ///
-    /// The raw plug-in estimator is badly biased upward for small datasets: a
+    /// On small samples the plug-in estimate of `max P` is biased upward: a
     /// byte value observed once is followed by exactly one value, which would
-    /// claim `P = 1.0` and report zero entropy for perfectly good random data.
+    /// claim `P = 1.0` and push reported entropy toward zero for good random data.
     /// Rows with fewer than [`Self::MIN_MARKOV_ROW_OBSERVATIONS`] transitions
     /// are therefore ignored. When no row has enough observations the sample
     /// cannot demonstrate predictability and the full 8.0 bits are returned.
@@ -346,12 +343,12 @@ impl QualityMetrics {
         }
     }
 
-    /// True when the score was capped because the data looks artificial.
+    /// True when the structural-red-flag cap applies to this sample.
     pub fn is_capped(&self) -> bool {
         self.has_artificial_structure()
     }
 
-    /// Structural red flags that cap the score at 30.
+    // Structural red flags that cap the score at 30.
     ///
     /// A 4-sigma serial-correlation bound keeps false positives at about
     /// 0.006%, while a deterministic sequence (`r` close to 1.0) still fails.
@@ -432,8 +429,8 @@ mod tests {
 
     #[test]
     fn short_counter_is_still_capped() {
-        // Too few transitions per row for the Markov estimator, but the
-        // chi-square anomaly and serial correlation must still cap the score.
+        // Every byte row has ~39 transitions here, so Markov does qualify;
+        // the uniform histogram and zero Markov entropy trigger the cap.
         let counter: Vec<u8> = (0..10_000).map(|i| (i % 256) as u8).collect();
         let metrics = QualityMetrics::analyze_slice(&counter);
         assert!(metrics.overall_score() <= 30.0);

@@ -1,9 +1,6 @@
-//! Monotonic timing that works on native targets and in the browser.
-//!
-//! `std::time::Instant::now()` compiles for `wasm32` but panics at runtime.
-//! Benchmarks therefore use `Instant` natively and `performance.now()` in the
-//! browser. Both paths expose the same `elapsed()` shape so callers stay
-//! platform-agnostic.
+//! Shared monotonic clock: `Instant` natively, `performance.now()` on wasm.
+//! See [Roadmap](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Roadmap)
+//! for why `Instant::now()` is banned in the browser.
 
 #[cfg(not(target_arch = "wasm32"))]
 mod platform {
@@ -35,6 +32,7 @@ mod platform {
             let milliseconds = web_sys::window()
                 .and_then(|window| window.performance())
                 .map(|performance| performance.now())
+                // Missing window yields a zero baseline; negative deltas clamp to zero.
                 .unwrap_or(0.0);
             Self(milliseconds)
         }

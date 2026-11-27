@@ -10,8 +10,9 @@ use super::EntropySource;
 ///
 /// # Security Note
 ///
-/// A biased source leaks its bias immediately: the frequency test fails, and
-/// so does anything that assumes a uniform distribution.
+/// Any `P(1)` other than 0.5 biases the bytes; a large enough sample fails the
+/// frequency test. See
+/// [SP 800-22 tests](https://rvoidex7.github.io/r7notes/Cryptography/NIST-Tests#sp-800-22-tests-used-in-r7crypto).
 #[derive(Debug, Clone)]
 pub struct BiasedSource {
     probability: f64,
@@ -50,8 +51,8 @@ impl BiasedSource {
         self.probability = probability.clamp(0.0, 1.0);
     }
 
-    /// Uniform `f64` in `[0, 1)` from the high 53 bits of a xorshift64 step.
     fn next_uniform(&mut self) -> f64 {
+        // High 53 bits only: f64 has 53 significand bits, so no rounding skew.
         let mut x = self.state;
         x ^= x << 13;
         x ^= x >> 7;

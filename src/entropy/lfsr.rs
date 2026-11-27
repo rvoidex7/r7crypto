@@ -2,17 +2,12 @@
 
 use super::EntropySource;
 
-/// Tap mask for `x^16 + x^14 + x^13 + x^11 + 1`.
-///
-/// This polynomial is maximal, so the register cycles through every non-zero
-/// 16-bit state exactly once: a period of 65,535 bits, or 65,535 bytes when
-/// one byte is produced per eight shifts.
+// x^16+x^14+x^13+x^11+1 is maximal: 65,535-bit state period.
 const TAPS: u16 = 0xB400;
 
-/// A 16-bit LFSR, the textbook example of a linear generator.
+/// Maximal 16-bit LFSR: passes frequency checks, fails on structure.
 ///
-/// The output passes a frequency check and fails anything that looks at
-/// structure: it is linear, so a short output window predicts the rest.
+/// See [Weak generators, on purpose](https://rvoidex7.github.io/r7notes/Cryptography/Random-Number-Generators#weak-generators-on-purpose).
 ///
 /// # Security Note
 ///

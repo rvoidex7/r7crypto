@@ -8,15 +8,14 @@ use super::EntropySource;
 
 /// ChaCha20 used as a deterministic, seeded CSPRNG.
 ///
-/// The 256-bit key is derived from a `u64` seed with SHA-256 and the nonce is
-/// fixed at zero. Because every seed produces a different key, the nonce never
-/// repeats under the same key. Same seed, same stream — which is exactly what
-/// makes the Test and Benchmark tabs reproducible.
+/// The 256-bit key comes from the `u64` seed via SHA-256 and the nonce is zero.
+/// Same seed, same stream — that reproducibility is the point for Test and
+/// Benchmark, not secrecy. See
+/// [Seeded CSPRNG](https://rvoidex7.github.io/r7notes/Cryptography/Random-Number-Generators#seeded-csprng).
 ///
 /// # Security Note
 ///
-/// A fixed seed is public knowledge. This source is for comparison and
-/// teaching; real applications must seed from the operating system.
+/// A guessable seed makes the stream predictable. Use the OS source for real keys.
 ///
 /// # Examples
 ///

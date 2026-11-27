@@ -1,13 +1,9 @@
 //! Step-by-step Shannon entropy visualization.
 //!
-//! Two different notions of "efficiency" are kept separate:
-//!
-//! * **Cryptographic byte entropy**: `H(X) / 8.0 bits per byte`.
-//! * **Observed-alphabet efficiency**: `H(X) / log2(|observed alphabet|)`.
-//!
-//! A two-character input such as `"AB"` has 100% observed-alphabet
-//! efficiency, but only `1.0 / 8.0 = 12.5%` cryptographic byte entropy. The
-//! UI must not call `"AB"` "high entropy".
+//! `H / 8` is Shannon bits per byte against an 8-bit ceiling; it is not
+//! min-entropy. See [Shannon entropy](https://rvoidex7.github.io/r7notes/Cryptography/Entropy#shannon-entropy)
+//! and [Min-entropy](https://rvoidex7.github.io/r7notes/Cryptography/Entropy#min-entropy).
+//! Open [Learn Shannon](https://rvoidex7.github.io/r7crypto/#/learn/shannon-entropy).
 
 use std::collections::HashMap;
 
@@ -21,6 +17,7 @@ pub enum EntropyStepType {
     Interpret,
 }
 
+/// Snapshot of one stage; later stages carry copies of the earlier maps.
 #[derive(Debug, Clone)]
 pub struct EntropyStep {
     pub step_type: EntropyStepType,
@@ -35,7 +32,7 @@ pub struct EntropyStep {
     pub alphabet_max_entropy: f64,
 }
 
-/// Manages the state of the Shannon entropy visualization.
+/// Deterministic walkthrough; `speed` is steps/s, `last_update` is egui seconds.
 pub struct EntropyProcess {
     pub input: String,
     pub steps: Vec<EntropyStep>,
@@ -74,7 +71,6 @@ impl EntropyProcess {
             return;
         }
 
-        // --- Step 1: Count bytes ---
         let mut byte_counts = HashMap::new();
         for &byte in data {
             *byte_counts.entry(byte).or_insert(0) += 1;
@@ -91,7 +87,6 @@ impl EntropyProcess {
             alphabet_max_entropy: 0.0,
         });
 
-        // --- Step 2: Probabilities ---
         let total_bytes = data.len() as f64;
         let mut probabilities = HashMap::new();
         for (&byte, &count) in &byte_counts {
@@ -115,7 +110,6 @@ impl EntropyProcess {
             alphabet_max_entropy,
         });
 
-        // --- Step 3: Contributions ---
         let mut entropy_contributions = HashMap::new();
         for (&byte, &p) in &probabilities {
             entropy_contributions.insert(byte, if p > 0.0 { -p * p.log2() } else { 0.0 });
@@ -132,7 +126,6 @@ impl EntropyProcess {
             alphabet_max_entropy,
         });
 
-        // --- Step 4: Sum ---
         let total_entropy: f64 = entropy_contributions.values().sum();
 
         self.steps.push(EntropyStep {
@@ -146,7 +139,6 @@ impl EntropyProcess {
             alphabet_max_entropy,
         });
 
-        // --- Step 5: Interpret ---
         self.steps.push(EntropyStep {
             step_type: EntropyStepType::Interpret,
             byte_counts,

@@ -39,6 +39,7 @@ fn main() {
     let mut data = vec![0u8; 500_000];
     entropy.fill_bytes(&mut data);
     let nist_results = NistTests::run_all_tests(&data);
+    let total = nist_results.len();
 
     let mut passed = 0;
     for (name, p_value) in nist_results {
@@ -52,9 +53,9 @@ fn main() {
         println!("{:<20} p={:.4}  {}", name, p_value, status);
     }
 
-    println!("\nNIST Tests Passed: {}/5", passed);
+    println!("\nNIST P-values >= 0.01: {passed}/{total}");
 
-    if passed >= 4 {
+    if passed * 2 > total {
         println!("\n✓ Source passes statistical randomness tests");
     } else {
         println!("\n⚠ Source shows signs of non-randomness");

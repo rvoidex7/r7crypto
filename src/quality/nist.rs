@@ -8,7 +8,10 @@
 //! * `*_test(data)` — uses all `data.len() * 8` bits.
 //! * `*_test_bits(data, bit_len)` — uses only the first `bit_len` bits.
 //!
-//! The decision threshold is `p_value >= 0.01` (NIST alpha).
+//! The decision threshold is `p_value >= 0.01`; see
+//! [Reading a P-value](https://rvoidex7.github.io/r7notes/Cryptography/NIST-Tests#reading-a-p-value).
+//! Open [Learn NIST Frequency](https://rvoidex7.github.io/r7crypto/#/learn/nist-frequency)
+//! for the five-step walkthrough.
 
 use statrs::distribution::{ChiSquared, ContinuousCDF, Normal};
 
@@ -26,6 +29,8 @@ impl NistTests {
     }
 
     /// Frequency (monobit) test over the first `bit_len` bits.
+    ///
+    /// Returns `0.0` (fail) when `bit_len < 100` or exceeds the data.
     pub fn frequency_test_bits(data: &[u8], bit_len: usize) -> f64 {
         // NIST SP 800-22 requires n >= 100 bits.
         if bit_len < 100 || bit_len > data.len() * 8 {
@@ -211,9 +216,10 @@ impl NistTests {
 
     /// Chi-square test for byte distribution.
     ///
-    /// Tests whether the byte values are uniformly distributed. Note that a
-    /// p-value close to 1.0 means the distribution is *too* uniform and is
-    /// itself suspicious for a real entropy source; see `QualityMetrics`.
+    /// Tests whether the byte values are uniformly distributed. A p-value
+    /// near 1.0 is itself suspicious for a real source; see
+    /// [`crate::quality::QualityMetrics`] and
+    /// [Reading a P-value](https://rvoidex7.github.io/r7notes/Cryptography/NIST-Tests#reading-a-p-value).
     pub fn chi_square_test(data: &[u8]) -> f64 {
         let chi_sq = Self::chi_square_statistic(data);
         if chi_sq < 0.0 {
@@ -324,7 +330,7 @@ impl NistTests {
     }
 }
 
-/// Compute `ψ²_k` with circular bit wrapping, without allocating a bit vector.
+// Compute `ψ²_k` with circular bit wrapping, without allocating a bit vector.
 fn psi_squared(data: &[u8], bit_len: usize, k: usize) -> f64 {
     if k == 0 || bit_len < k {
         return 0.0;
@@ -350,7 +356,7 @@ fn psi_squared(data: &[u8], bit_len: usize, k: usize) -> f64 {
     (patterns as f64 / bit_len as f64) * sum_squares - bit_len as f64
 }
 
-/// CUSUM p-value for one direction of the sequence.
+// CUSUM p-value for one direction of the sequence.
 fn cusum_p_value(data: &[u8], bit_len: usize, reverse: bool) -> f64 {
     let mut sum: i64 = 0;
     let mut max_abs: i64 = 0;
@@ -402,7 +408,7 @@ fn cusum_p_value(data: &[u8], bit_len: usize, reverse: bool) -> f64 {
     (1.0 - sum1 + sum2).clamp(0.0, 1.0)
 }
 
-/// Upper-tail p-value of a chi-square distribution.
+// Upper-tail p-value of a chi-square distribution.
 fn chi_square_p_value(statistic: f64, degrees_of_freedom: f64) -> f64 {
     if !statistic.is_finite() || degrees_of_freedom <= 0.0 {
         return 0.0;
@@ -504,8 +510,8 @@ mod tests {
     fn counter_passes_monobit_despite_being_deterministic() {
         let counter: Vec<u8> = (0..100_000).map(|i| (i % 256) as u8).collect();
         assert!(NistTests::frequency_test(&counter) > 0.5);
-        // A byte counter is perfectly balanced, so bit-level tests alone can
-        // miss it. QualityMetrics::markov_min_entropy is what catches it.
+        // A byte counter is balanced, so bit-level tests alone can miss it;
+        // see [Why they diverge](https://rvoidex7.github.io/r7notes/Cryptography/Entropy#why-they-diverge).
     }
 
     #[test]

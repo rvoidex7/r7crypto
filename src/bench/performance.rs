@@ -1,13 +1,15 @@
-//! Performance benchmarking for entropy sources
+//! Source speed only; operation benchmarks are planned. See
+//! [Data flow](https://rvoidex7.github.io/r7notes/Projects/r7crypto/Architecture#data-flow).
+//! Open [Benchmark](https://rvoidex7.github.io/r7crypto/#/benchmark) to run it.
 
 use crate::entropy::EntropySource;
 use crate::time::Clock;
 use std::time::Duration;
 
-/// Performance benchmark results
+/// Throughput and latency for one source run.
 #[derive(Debug, Clone)]
 pub struct BenchmarkResult {
-    /// Throughput in megabytes per second
+    /// Decimal MB/s (bytes / 1_000_000 / seconds).
     pub throughput_mbps: f64,
 
     /// Average latency per byte in microseconds
@@ -20,18 +22,11 @@ pub struct BenchmarkResult {
     pub duration: Duration,
 }
 
-/// Performance benchmarking utility
+/// Times a single `fill_bytes` call.
 pub struct PerformanceBench;
 
 impl PerformanceBench {
-    /// Benchmark an entropy source
-    ///
-    /// Generates `total_bytes` and measures throughput and latency.
-    ///
-    /// # Arguments
-    ///
-    /// * `source` - Entropy source to benchmark
-    /// * `total_bytes` - Number of bytes to generate
+    /// Generate `total_bytes` and measure throughput and latency.
     ///
     /// # Examples
     ///
@@ -88,12 +83,21 @@ impl PerformanceBench {
         }
     }
 
-    /// Run multiple iterations and return average
+    /// Average over `iterations` runs; zero iterations return a zeroed result.
     pub fn benchmark_avg<E: ?Sized + EntropySource>(
         source: &mut E,
         bytes_per_iteration: usize,
         iterations: usize,
     ) -> BenchmarkResult {
+        if iterations == 0 {
+            return BenchmarkResult {
+                throughput_mbps: 0.0,
+                latency_us: 0.0,
+                bytes_generated: 0,
+                duration: Duration::ZERO,
+            };
+        }
+
         let mut total_throughput = 0.0;
         let mut total_latency = 0.0;
         let mut total_duration = Duration::ZERO;
@@ -116,7 +120,7 @@ impl PerformanceBench {
 }
 
 impl BenchmarkResult {
-    /// Format result as human-readable string
+    /// Three-line UI summary.
     pub fn format(&self) -> String {
         format!(
             "Throughput: {:.2} MB/s\n\
@@ -182,6 +186,17 @@ mod tests {
         assert_eq!(avg.bytes_generated, 0);
         assert!(avg.throughput_mbps.is_finite());
         assert!(avg.latency_us.is_finite());
+    }
+
+    #[test]
+    fn zero_iterations_does_not_produce_nan() {
+        let mut source = MockEntropy::new(1);
+        let result = PerformanceBench::benchmark_avg(&mut source, 1_000, 0);
+
+        assert_eq!(result.bytes_generated, 0);
+        assert_eq!(result.throughput_mbps, 0.0);
+        assert_eq!(result.latency_us, 0.0);
+        assert!(result.duration.is_zero());
     }
 
     #[test]

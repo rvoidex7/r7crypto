@@ -1,8 +1,8 @@
 //! SHA-256 strict avalanche criterion (SAC) analysis.
 //!
-//! The avalanche effect is a property of hash functions and block ciphers, not
-//! of a plaintext-XOR stream cipher. Flipping one input bit of SHA-256 should
-//! flip approximately half of the 256 output bits.
+//! See [Avalanche Effect](https://rvoidex7.github.io/r7notes/Cryptography/Avalanche-Effect)
+//! for the SAC definition and why XOR ciphers are not avalanche functions.
+//! Open [Avalanche](https://rvoidex7.github.io/r7crypto/#/avalanche) to run it.
 
 use sha2::{Digest, Sha256};
 

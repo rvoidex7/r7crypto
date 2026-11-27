@@ -1,8 +1,8 @@
 //! Golden and adversarial tests for the cryptographic and statistical core.
 //!
-//! Expected values come from NIST SP 800-22 Rev. 1a (Sections 2.1.8, 2.3.8,
-//! 2.4.8 and 2.13.8). These values are fixed by the specification and must not
-//! be relaxed.
+//! Golden vectors come from NIST SP 800-22 Rev. 1a; see
+//! [Golden vectors](https://rvoidex7.github.io/r7notes/Cryptography/NIST-Tests#golden-vectors).
+//! They are specification facts and must not be relaxed.
 
 use r7crypto::crypto::{AvalancheAnalyzer, KeyedStreamCipher};
 use r7crypto::learn::EncryptionProcess;

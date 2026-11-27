@@ -3,7 +3,8 @@
 //! The GUI must never do heavy work in its paint callback. On native targets a
 //! job is driven to completion on a worker thread; on wasm there are no
 //! threads, so the same job advances in small steps when the UI polls it.
-//! Both paths therefore produce byte-for-byte identical results.
+//! Both paths feed the same analysis code, so NIST values and metrics match;
+//! benchmark timings are wall-clock measurements and are not comparable.
 
 use std::time::Duration;
 
