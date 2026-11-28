@@ -6,8 +6,8 @@ GitHub uses `SECURITY.md` to surface a private **Report a vulnerability** entry 
 
 | Version | Status |
 |---|---|
-| 0.4.x | Maintained |
-| older | Not maintained |
+| Latest release | Maintained |
+| Older releases | Not maintained |
 
 Release assets and notes are on the [releases page](https://github.com/rvoidex7/r7crypto/releases).
 
